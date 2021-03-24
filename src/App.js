@@ -1,77 +1,105 @@
 // import logo from './logo.svg';
 import React, { Component } from 'react';
-import {
-  BrowserRouter as Router,
-  Switch,
-  Route,
-  Link
-} from "react-router-dom";
+import { groups } from './SampleData';
 import 'bootstrap/dist/css/bootstrap.css';
 import './App.css';
 
 class Input extends Component {
-  state = {  
-    numCourses: 2,
-    courses: [
-      {
-        id: 1, 
-        title: "CS 336",
-        fall: [1300, 1420],
-        winter: [930, 1050],
-        spring: [930, 1050]
-      }, 
-      {
-        id: 2, 
-        title: "CS 339", 
-        fall: [900, 950],
-        winter: [1530, 1650],
-        spring: [1530, 1650]
-      }, 
-    ]
-  }
+  state = { }
 
   handleCourse = () => {
-    console.log(this.state.courses);
+    console.log('Handle Course');
+  }
+
+  handleSeries = () => {
+    console.log('Handle Series');
   }
 
   render() { 
     return ( 
-      <>
-        <h2>Courses Added: {this.state.courses.map((course) => (
-          course.title + " | "
-        ))}
-        </h2>
-        <form>
-          {this.state.courses.map((course) => (
-            <React.Fragment>
-              <div class="form-group">
-                <label>Course Name</label>
-                <input type="text" class="form-control" placeholder="Name" />
-              </div>
-              <div class="form-group">
+      <div style={{marginBottom: "2%"}}>
+        {groups.map((group, index) => (
+          <div style={{marginBottom: "5%"}} key={index} className="form-row">
+            {group.map((course, index) => (
+              <div key={index} className="form-group col-md-3">
+                <u>{course.title}</u>
+
+                <br />
                 <label>Fall</label>
-                <input type="text" class="form-control" placeholder="Start Time" />
+                <div className="form-check">
+                  <input className="form-check-input" type="checkbox" />
+                  <label className="form-check-label">
+                    Unavailable This Quarter
+                  </label>
+                </div>
+                <div className="input-group">
+                  <input type="text" className="form-control" placeholder="Start Time" />
+                  <select>
+                    <option>AM</option>
+                    <option>PM</option>
+                  </select>
+                </div>
+                <div className="input-group">
+                  <input type="text" className="form-control" placeholder="End Time" />
+                  <select>
+                    <option>AM</option>
+                    <option>PM</option>
+                  </select>
+                </div>
+
                 <br />
-                <input type="text" class="form-control" placeholder="End Time" />
-              </div>
-              <div class="form-group">
                 <label>Winter</label>
-                <input type="text" class="form-control" placeholder="Start Time" />
+                <div className="form-check">
+                  <input className="form-check-input" type="checkbox" />
+                  <label className="form-check-label">
+                    Unavailable This Quarter
+                  </label>
+                </div>
+                <div className="input-group">
+                  <input type="text" className="form-control" placeholder="Start Time" />
+                  <select>
+                    <option>AM</option>
+                    <option>PM</option>
+                  </select>
+                </div>
+                <div className="input-group">
+                  <input type="text" className="form-control" placeholder="End Time" />
+                  <select>
+                    <option>AM</option>
+                    <option>PM</option>
+                  </select>
+                </div>
+
                 <br />
-                <input type="text" class="form-control" placeholder="End Time" />
-              </div>
-              <div class="form-group">
                 <label>Spring</label>
-                <input type="text" class="form-control" placeholder="Start Time" />
-                <br />
-                <input type="text" class="form-control" placeholder="End Time" />
+                <div className="form-check">
+                  <input className="form-check-input" type="checkbox" />
+                  <label className="form-check-label">
+                    Unavailable This Quarter
+                  </label>
+                </div>
+                <div className="input-group">
+                  <input type="text" className="form-control" placeholder="Start Time" />
+                  <select>
+                    <option>AM</option>
+                    <option>PM</option>
+                  </select>
+                </div>
+                <div className="input-group">
+                  <input type="text" className="form-control" placeholder="End Time" />
+                  <select>
+                    <option>AM</option>
+                    <option>PM</option>
+                  </select>
+                </div>
+
               </div>
-              <hr className="hr-light" />
-            </React.Fragment>
-          ))}
-        </form>
-        <button onClick={this.handleCourse} className="btn btn-primary">Add Course</button>
-      </>
+            ))}
+          </div>
+        ))}
+        <button style={{marginRight: "1%"}} onClick={this.handleCourse} className="btn btn-primary">Add Course</button>
+        <button onClick={this.handleSeries} className="btn btn-primary">Add Year-Long Series</button>
+      </div>
     );
   }
 }
@@ -92,8 +120,8 @@ class App extends Component {
 
   render() {
     return (
-      <div className="Global">
-        <h1>AutoSchedule</h1>
+      <div className="global">
+        <h1 style={{marginTop: "1%"}}>AutoSchedule</h1>
         <hr className="hr"/>
         {this.state.input ? <Input /> : <Output />}
       </div>
