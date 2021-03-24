@@ -1,11 +1,15 @@
 // import logo from './logo.svg';
 import React, { Component } from 'react';
-import { groups } from './SampleData';
+import { courseIdMap_sm, courseIdMap_lg, groupsSmall, groupsLarge } from './SampleData';
 import 'bootstrap/dist/css/bootstrap.css';
 import './App.css';
 
 class Input extends Component {
-  state = { }
+  state = { 
+    numCourses: 0,
+    groups: [],
+    courseIdMap: []
+  }
 
   handleCourse = () => {
     console.log('Handle Course');
@@ -17,14 +21,33 @@ class Input extends Component {
 
   render() { 
     return ( 
-      <div style={{marginBottom: "2%"}}>
-        {groups.map((group, index) => (
-          <div style={{marginBottom: "5%"}} key={index} className="form-row">
+      <div className="m-bottom">
+        {groupsSmall.map((group, index) => (
+          <div key={index} className="form-row m-bottom-sm">
             {group.map((course, index) => (
               <div key={index} className="form-group col-md-3">
-                <u>{course.title}</u>
+                <div className="input-group m-bottom">
+                  <input type="text" className="form-control" placeholder="Course Title" />
+                </div>
 
-                <br />
+                <label>Prerequisites:</label>
+                <div className="input-group">
+                  <div className="form-check">
+                    <input className="form-check-input" type="checkbox" />
+                    <label className="form-check-label">None</label>
+                  </div>
+                </div>
+                <div className="input-group m-bottom">
+                    {courseIdMap_lg.map((course) => (
+                      <div className="form-check m-right">
+                        <input className="form-check-input" type="checkbox" />
+                        <label className="form-check-label">{course.title}</label>
+                      </div>
+                    ))}
+                </div>
+
+                <hr className="hr" />
+
                 <label>Fall</label>
                 <div className="form-check">
                   <input className="form-check-input" type="checkbox" />
@@ -32,51 +55,27 @@ class Input extends Component {
                     Unavailable This Quarter
                   </label>
                 </div>
-                <div className="input-group">
-                  <input type="text" className="form-control" placeholder="Start Time" />
-                  <select>
-                    <option>AM</option>
-                    <option>PM</option>
-                  </select>
-                </div>
-                <div className="input-group">
-                  <input type="text" className="form-control" placeholder="End Time" />
-                  <select>
-                    <option>AM</option>
-                    <option>PM</option>
-                  </select>
-                </div>
-
-                <br />
-                <label>Winter</label>
-                <div className="form-check">
-                  <input className="form-check-input" type="checkbox" />
-                  <label className="form-check-label">
-                    Unavailable This Quarter
-                  </label>
-                </div>
-                <div className="input-group">
-                  <input type="text" className="form-control" placeholder="Start Time" />
-                  <select>
-                    <option>AM</option>
-                    <option>PM</option>
-                  </select>
-                </div>
-                <div className="input-group">
-                  <input type="text" className="form-control" placeholder="End Time" />
-                  <select>
-                    <option>AM</option>
-                    <option>PM</option>
-                  </select>
-                </div>
-
-                <br />
-                <label>Spring</label>
-                <div className="form-check">
-                  <input className="form-check-input" type="checkbox" />
-                  <label className="form-check-label">
-                    Unavailable This Quarter
-                  </label>
+                <div className="input-group m-bottom">
+                  <div className="form-check m-right">
+                    <input className="form-check-input" type="checkbox" />
+                    <label className="form-check-label">M</label>
+                  </div>
+                  <div className="form-check m-right">
+                    <input className="form-check-input" type="checkbox" />
+                    <label className="form-check-label">Tu</label>
+                  </div>
+                  <div className="form-check m-right">
+                    <input className="form-check-input" type="checkbox" />
+                    <label className="form-check-label">W</label>
+                  </div>
+                  <div className="form-check m-right">
+                    <input className="form-check-input" type="checkbox" />
+                    <label className="form-check-label">Th</label>
+                  </div>
+                  <div className="form-check m-right">
+                    <input className="form-check-input" type="checkbox" />
+                    <label className="form-check-label">F</label>
+                  </div>
                 </div>
                 <div className="input-group">
                   <input type="text" className="form-control" placeholder="Start Time" />
@@ -92,13 +91,21 @@ class Input extends Component {
                     <option>PM</option>
                   </select>
                 </div>
-
+                <button className="btn btn-success btn-sm m-top">Add Time</button>
               </div>
             ))}
           </div>
         ))}
-        <button style={{marginRight: "1%"}} onClick={this.handleCourse} className="btn btn-primary">Add Course</button>
+        <button onClick={this.handleCourse} className="btn btn-primary m-right-sm">Add Course</button>
         <button onClick={this.handleSeries} className="btn btn-primary">Add Year-Long Series</button>
+        <div className="form-check m-top-sm">
+          <input className="form-check-input" type="checkbox" />
+          <label className="form-check-label">Max 4 Courses Per Quarter</label>
+        </div>
+        <div className="form-check">
+          <input className="form-check-input" type="checkbox" />
+          <label className="form-check-label">Balance Schedule (Equal # of Courses Per Quarter)</label>
+        </div>
       </div>
     );
   }

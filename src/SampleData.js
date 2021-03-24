@@ -1,4 +1,65 @@
-export const groups = [
+export const groupsSmall = [
+  [
+    {
+      id: 0, 
+      title: "CS 336",
+      fall: [1300, 1420, [0, 1, 0, 1, 0]],
+      winter: [930, 1050, [0, 1, 0, 1, 0]],
+      spring: [930, 1050, [0, 1, 0, 1, 0]], 
+      series: false,
+      prereq: null
+    }, 
+    {
+      id: 1, 
+      title: "CS 339", 
+      fall: null,
+      winter: [1530, 1650, [0, 1, 0, 1, 0]],
+      spring: [1530, 1650, [0, 1, 0, 1, 0]], 
+      series: false,
+      prereq: null
+    }
+  ]
+];
+
+export const courseIdMap_sm = [
+  {
+    id: 1,
+    title: "CS 336"
+  },
+  {
+    id: 2,
+    title: "CS 339"
+  }
+];
+
+export const courseIdMap_lg = [
+  {
+    id: 1,
+    title: "CS 336"
+  },
+  {
+    id: 2,
+    title: "CS 339"
+  },
+  {
+    id: 3,
+    title: "CS 348"
+  },
+  {
+    id: 4,
+    title: "CS 349"
+  },
+  {
+    id: 5,
+    title: "CS 321"
+  },
+  {
+    id: 6,
+    title: "CS 337"
+  }
+];
+
+export const groupsLarge = [
     [
       {
         id: 0, 
