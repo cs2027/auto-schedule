@@ -42,3 +42,19 @@
 .m-bottom-sm {
   margin-bottom: 1%;
 }
+
+.m-right-lg {
+  margin-right: 5%;
+}
+
+.m-left-lg {
+  margin-left: 5%;
+}
+
+.m-top-lg {
+  margin-top: 5%;
+}
+
+.m-bottom-lg {
+  margin-bottom: 5%;
+}
