@@ -23,7 +23,13 @@ class Input extends Component {
         return i;
       };
     };
-  }
+  };
+
+  // Pad numbers to 2 digits
+  // Used to format single-digit minutes nicely (8:0 AM --> 8:00 AM)
+  padDigits = (n) => {
+    return n.toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping:false});
+  };
 
   //////////////////////////
   // Add & remove courses //
@@ -38,14 +44,14 @@ class Input extends Component {
                   id: oldState.currentId, 
                   title: `Course ${oldState.currentId}`, 
                   lecTimes: {
-                    fall: [{start: null, end: null, dow: [0, 0, 0, 0, 0]}],
-                    winter: [{start: null, end: null, dow: [0, 0, 0, 0, 0]}],
-                    spring: [{start: null, end: null, dow: [0, 0, 0, 0, 0]}]
+                    fall: [{start: [-1, -1, 0], end: [-1, -1, 0], dow: [0, 0, 0, 0, 0]}],
+                    winter: [{start: [-1, -1, 0], end: [-1, -1, 0], dow: [0, 0, 0, 0, 0]}],
+                    spring: [{start: [-1, -1, 0], end: [-1, -1, 0], dow: [0, 0, 0, 0, 0]}]
                   },
                   discTimes: {
-                    fall: [{start: null, end: null, dow: [0, 0, 0, 0, 0]}],
-                    winter: [{start: null, end: null, dow: [0, 0, 0, 0, 0]}],
-                    spring: [{start: null, end: null, dow: [0, 0, 0, 0, 0]}]
+                    fall: [{start: [-1, -1, 0], end: [-1, -1, 0], dow: [0, 0, 0, 0, 0]}],
+                    winter: [{start: [-1, -1, 0], end: [-1, -1, 0], dow: [0, 0, 0, 0, 0]}],
+                    spring: [{start: [-1, -1, 0], end: [-1, -1, 0], dow: [0, 0, 0, 0, 0]}]
                   },
                   available: {
                     fall: true,
@@ -84,7 +90,7 @@ class Input extends Component {
     let index = this.findIndex(courseId);
 
     let courses = [...this.state.courses];
-    courses[index].lecTimes[quarter].push({start: null, end: null, dow: [0, 0, 0, 0, 0]});
+    courses[index].lecTimes[quarter].push({start: [-1, -1, 0], end: [-1, -1, 0], dow: [0, 0, 0, 0, 0]});
     this.setState({ courses });
   };
 
@@ -102,6 +108,49 @@ class Input extends Component {
     this.setState({ courses });
   };
 
+  // Update days of week of a lecture time slot
+  lecDow = (courseId, quarter, lecIndex, dayIndex) => {
+    let index = this.findIndex(courseId);
+    let courses = [...this.state.courses];
+
+    let current = courses[index].lecTimes[quarter][lecIndex].dow[dayIndex];
+    if (current === 0) {
+      courses[index].lecTimes[quarter][lecIndex].dow[dayIndex] = 1;
+    } else {
+      courses[index].lecTimes[quarter][lecIndex].dow[dayIndex] = 0;
+    }
+
+    this.setState({ courses });
+  };
+
+  // Update start & end times of a lecture time slot
+  lecTimes = ({target}) => {
+    let courseId = parseInt(target.dataset.courseid);
+    let quarter = target.dataset.quarter;
+    let lecIndex = parseInt(target.dataset.lecindex);
+    let type = target.dataset.type;
+    let value = parseInt(target.value);
+
+    let index = this.findIndex(courseId);
+    let courses = [...this.state.courses];
+
+    if (type === "start-hr") {
+      courses[index].lecTimes[quarter][lecIndex].start[0] = value;
+    } else if (type === "start-min") {
+      courses[index].lecTimes[quarter][lecIndex].start[1] = value;
+    } else if (type === "start-am-pm") {
+      courses[index].lecTimes[quarter][lecIndex].start[2] = value;
+    } else if (type === "end-hr") {
+      courses[index].lecTimes[quarter][lecIndex].end[0] = value;
+    } else if (type === "end-min") {
+      courses[index].lecTimes[quarter][lecIndex].end[1] = value;
+    } else {
+      courses[index].lecTimes[quarter][lecIndex].end[2] = value;
+    }
+
+    this.setState({ courses });
+  };
+
   /////////////////////////////
   // Update discussion times //
   /////////////////////////////
@@ -111,7 +160,7 @@ class Input extends Component {
     let index = this.findIndex(courseId);
 
     let courses = [...this.state.courses];
-    courses[index].discTimes[quarter].push({start: null, end: null, dow: [0, 0, 0, 0, 0]});
+    courses[index].discTimes[quarter].push({start: [-1, -1, 0], end: [-1, -1, 0], dow: [0, 0, 0, 0, 0]});
     this.setState({ courses });
   };
 
@@ -126,6 +175,49 @@ class Input extends Component {
     };
 
     courses[index].discTimes[quarter].pop();
+    this.setState({ courses });
+  };
+
+  // Update days of week of a discussion section time slot
+  discDow = (courseId, quarter, discIndex, dayIndex) => {
+    let index = this.findIndex(courseId);
+    let courses = [...this.state.courses];
+
+    let current = courses[index].discTimes[quarter][discIndex].dow[dayIndex];
+    if (current === 0) {
+      courses[index].discTimes[quarter][discIndex].dow[dayIndex] = 1;
+    } else {
+      courses[index].discTimes[quarter][discIndex].dow[dayIndex] = 0;
+    }
+
+    this.setState({ courses });
+  };
+
+  // Update start & end times of a discussion section time slot
+  discTimes = ({target}) => {
+    let courseId = parseInt(target.dataset.courseid);
+    let quarter = target.dataset.quarter;
+    let discIndex = parseInt(target.dataset.discindex);
+    let type = target.dataset.type;
+    let value = parseInt(target.value);
+
+    let index = this.findIndex(courseId);
+    let courses = [...this.state.courses];
+
+    if (type === "start-hr") {
+      courses[index].discTimes[quarter][discIndex].start[0] = value;
+    } else if (type === "start-min") {
+      courses[index].discTimes[quarter][discIndex].start[1] = value;
+    } else if (type === "start-am-pm") {
+      courses[index].discTimes[quarter][discIndex].start[2] = value;
+    } else if (type === "end-hr") {
+      courses[index].discTimes[quarter][discIndex].end[0] = value;
+    } else if (type === "end-min") {
+      courses[index].discTimes[quarter][discIndex].end[1] = value;
+    } else {
+      courses[index].discTimes[quarter][discIndex].end[2] = value;
+    }
+
     this.setState({ courses });
   };
 
@@ -280,44 +372,149 @@ class Input extends Component {
               </div>
 
               <div hidden={!(this.state.courses[this.findIndex(course.id)].available.fall)}>
+
                 {/* Fall Quarter: Lecture Times */}
                 <h5 className="m-top-lg">Lectures</h5>
-                {course.lecTimes.fall.map((index) => (
+                {course.lecTimes.fall.map((lecTime, index) => (
                   <React.Fragment>
                     <div className="input-group m-bottom">
                       <div className="form-check m-right">
-                        <input className="form-check-input" type="checkbox" />
+                        <input
+                          onChange={() => this.lecDow(course.id, 'fall', index, 0)} 
+                          checked={lecTime.dow[0] === 1}
+                          className="form-check-input" 
+                          type="checkbox" 
+                        />
                         <label className="form-check-label">M</label>
                       </div>
                       <div className="form-check m-right">
-                        <input className="form-check-input" type="checkbox" />
+                        <input
+                          onChange={() => this.lecDow(course.id, 'fall', index, 1)} 
+                          checked={lecTime.dow[1] === 1}
+                          className="form-check-input" 
+                          type="checkbox" 
+                        />
                         <label className="form-check-label">Tu</label>
                       </div>
                       <div className="form-check m-right">
-                        <input className="form-check-input" type="checkbox" />
+                        <input
+                          onChange={() => this.lecDow(course.id, 'fall', index, 2)} 
+                          checked={lecTime.dow[2] === 1}
+                          className="form-check-input" 
+                          type="checkbox" 
+                        />
                         <label className="form-check-label">W</label>
                       </div>
                       <div className="form-check m-right">
-                        <input className="form-check-input" type="checkbox" />
+                        <input
+                          onChange={() => this.lecDow(course.id, 'fall', index, 3)} 
+                          checked={lecTime.dow[3] === 1}
+                          className="form-check-input" 
+                          type="checkbox" 
+                        />
                         <label className="form-check-label">Th</label>
                       </div>
                       <div className="form-check m-right">
-                        <input className="form-check-input" type="checkbox" />
+                        <input
+                          onChange={() => this.lecDow(course.id, 'fall', index, 4)} 
+                          checked={lecTime.dow[4] === 1}
+                          className="form-check-input" 
+                          type="checkbox" 
+                        />
                         <label className="form-check-label">F</label>
                       </div>
                     </div>
+
                     <div className="input-group">
-                    <input type="text" className="form-control" placeholder="Start Time" />
-                    <select>
-                      <option>AM</option>
-                      <option>PM</option>
-                    </select>
+                      <select 
+                        onChange={this.lecTimes}
+                        value={this.state.courses[this.findIndex(course.id)].lecTimes.fall[index].start[0]}
+                        data-courseid={course.id}
+                        data-quarter="fall"
+                        data-lecindex={index}
+                        data-type="start-hr"
+                        className="custom-select" 
+                        style={{width: "auto"}}
+                      >
+                        <option value="-1">Start Hr</option>
+                        {[...Array(12)].map((x, i) =>
+                        <option value={i + 1}>
+                          {i + 1}
+                        </option>)}
+                      </select>
+                      <label className="m-right m-left">:</label>
+                      <select 
+                        onChange={this.lecTimes}
+                        value={this.state.courses[this.findIndex(course.id)].lecTimes.fall[index].start[1]}
+                        data-courseid={course.id}
+                        data-quarter="fall"
+                        data-lecindex={index}
+                        data-type="start-min"
+                        className="custom-select" 
+                        style={{width: "auto"}}
+                      >
+                        <option value="-1">Start Min</option>
+                        {[...Array(60)].map((x, i) =>
+                        <option value={i}>
+                          {this.padDigits(i)}
+                        </option>)}
+                      </select>
+                      <select 
+                        onChange={this.lecTimes}
+                        value={this.state.courses[this.findIndex(course.id)].lecTimes.fall[index].start[2]}
+                        data-courseid={course.id}
+                        data-quarter="fall"
+                        data-lecindex={index}
+                        data-type="start-am-pm"
+                      >
+                        <option value="0">AM</option>
+                        <option value="1">PM</option>
+                      </select>
                     </div>
                     <div className="input-group m-bottom">
-                      <input type="text" className="form-control" placeholder="End Time" />
-                      <select>
-                        <option>AM</option>
-                        <option>PM</option>
+                      <select 
+                        onChange={this.lecTimes}
+                        value={this.state.courses[this.findIndex(course.id)].lecTimes.fall[index].end[0]}
+                        data-courseid={course.id}
+                        data-quarter="fall"
+                        data-lecindex={index}
+                        data-type="end-hr"
+                        className="custom-select" 
+                        style={{width: "auto"}}
+                      >
+                        <option value="-1">End Hr</option>
+                        {[...Array(12)].map((x, i) =>
+                        <option value={i}>
+                          {i}
+                        </option>)}
+                      </select>
+                      <label className="m-right m-left">:</label>
+                      <select 
+                        onChange={this.lecTimes}
+                        value={this.state.courses[this.findIndex(course.id)].lecTimes.fall[index].end[1]}
+                        data-courseid={course.id}
+                        data-quarter="fall"
+                        data-lecindex={index}
+                        data-type="end-min"
+                        className="custom-select" 
+                        style={{width: "auto"}}
+                      >
+                        <option value="-1">End Min</option>
+                        {[...Array(60)].map((x, i) =>
+                        <option value={i}>
+                          {this.padDigits(i)}
+                        </option>)}
+                      </select>
+                      <select 
+                        onChange={this.lecTimes}
+                        value={this.state.courses[this.findIndex(course.id)].lecTimes.fall[index].end[2]}
+                        data-courseid={course.id}
+                        data-quarter="fall"
+                        data-lecindex={index}
+                        data-type="end-am-pm"
+                      >
+                        <option value="0">AM</option>
+                        <option value="1">PM</option>
                       </select>
                     </div>
                   </React.Fragment>
@@ -333,48 +530,153 @@ class Input extends Component {
                     Remove Lecture Time
                 </button>
 
+                
                 {/* Fall Quarter: Discussion Times */}
                 <div hidden={!(this.state.courses[this.findIndex(course.id)].disc.fall)}>
                   <h5 className="m-top-lg">Discussion Section</h5>
-                  {course.discTimes.fall.map((index) => (
+                  {course.discTimes.fall.map((discTime, index) => (
                     <React.Fragment>
-                      <div className="input-group m-bottom">
-                        <div className="form-check m-right">
-                          <input className="form-check-input" type="checkbox" />
-                          <label className="form-check-label">M</label>
-                        </div>
-                        <div className="form-check m-right">
-                          <input className="form-check-input" type="checkbox" />
-                          <label className="form-check-label">Tu</label>
-                        </div>
-                        <div className="form-check m-right">
-                          <input className="form-check-input" type="checkbox" />
-                          <label className="form-check-label">W</label>
-                        </div>
-                        <div className="form-check m-right">
-                          <input className="form-check-input" type="checkbox" />
-                          <label className="form-check-label">Th</label>
-                        </div>
-                        <div className="form-check m-right">
-                          <input className="form-check-input" type="checkbox" />
-                          <label className="form-check-label">F</label>
-                        </div>
+                    <div className="input-group m-bottom">
+                      <div className="form-check m-right">
+                        <input
+                        onChange={() => this.discDow(course.id, 'fall', index, 0)} 
+                        checked={discTime.dow[0] === 1}
+                        className="form-check-input" 
+                        type="checkbox" 
+                        />
+                        <label className="form-check-label">M</label>
                       </div>
-                      <div className="input-group">
-                      <input type="text" className="form-control" placeholder="Start Time" />
-                      <select>
-                        <option>AM</option>
-                        <option>PM</option>
+                      <div className="form-check m-right">
+                        <input
+                        onChange={() => this.discDow(course.id, 'fall', index, 1)} 
+                        checked={discTime.dow[1] === 1}
+                        className="form-check-input" 
+                        type="checkbox" 
+                        />
+                        <label className="form-check-label">Tu</label>
+                      </div>
+                      <div className="form-check m-right">
+                        <input
+                        onChange={() => this.discDow(course.id, 'fall', index, 2)} 
+                        checked={discTime.dow[2] === 1}
+                        className="form-check-input" 
+                        type="checkbox" 
+                        />
+                        <label className="form-check-label">W</label>
+                      </div>
+                      <div className="form-check m-right">
+                        <input
+                        onChange={() => this.discDow(course.id, 'fall', index, 3)} 
+                        checked={discTime.dow[3] === 1}
+                        className="form-check-input" 
+                        type="checkbox" 
+                        />
+                        <label className="form-check-label">Th</label>
+                      </div>
+                      <div className="form-check m-right">
+                        <input
+                        onChange={() => this.discDow(course.id, 'fall', index, 4)} 
+                        checked={discTime.dow[4] === 1}
+                        className="form-check-input" 
+                        type="checkbox" 
+                        />
+                        <label className="form-check-label">F</label>
+                      </div>
+                    </div>
+                      
+                    <div className="input-group">
+                      <select 
+                        onChange={this.discTimes}
+                        value={this.state.courses[this.findIndex(course.id)].discTimes.fall[index].start[0]}
+                        data-courseid={course.id}
+                        data-quarter="fall"
+                        data-discindex={index}
+                        data-type="start-hr"
+                        className="custom-select" 
+                        style={{width: "auto"}}
+                      >
+                        <option value="-1">Start Hr</option>
+                        {[...Array(12)].map((x, i) =>
+                        <option value={i + 1}>
+                          {i + 1}
+                        </option>)}
                       </select>
-                      </div>
-                      <div className="input-group m-bottom">
-                        <input type="text" className="form-control" placeholder="End Time" />
-                        <select>
-                          <option>AM</option>
-                          <option>PM</option>
-                        </select>
-                      </div>
-                    </React.Fragment>
+                      <label className="m-right m-left">:</label>
+                      <select 
+                        onChange={this.discTimes}
+                        value={this.state.courses[this.findIndex(course.id)].discTimes.fall[index].start[1]}
+                        data-courseid={course.id}
+                        data-quarter="fall"
+                        data-discindex={index}
+                        data-type="start-min"
+                        className="custom-select" 
+                        style={{width: "auto"}}
+                      >
+                        <option value="-1">Start Min</option>
+                        {[...Array(60)].map((x, i) =>
+                        <option value={i}>
+                          {this.padDigits(i)}
+                        </option>)}
+                      </select>
+                      <select 
+                        onChange={this.discTimes}
+                        value={this.state.courses[this.findIndex(course.id)].discTimes.fall[index].start[2]}
+                        data-courseid={course.id}
+                        data-quarter="fall"
+                        data-discindex={index}
+                        data-type="start-am-pm"
+                      >
+                        <option value="0">AM</option>
+                        <option value="1">PM</option>
+                      </select>
+                    </div>
+                    <div className="input-group m-bottom">
+                      <select 
+                        onChange={this.discTimes}
+                        value={this.state.courses[this.findIndex(course.id)].discTimes.fall[index].end[0]}
+                        data-courseid={course.id}
+                        data-quarter="fall"
+                        data-discindex={index}
+                        data-type="end-hr"
+                        className="custom-select" 
+                        style={{width: "auto"}}
+                      >
+                        <option value="-1">End Hr</option>
+                        {[...Array(12)].map((x, i) =>
+                        <option value={i}>
+                          {i}
+                        </option>)}
+                      </select>
+                      <label className="m-right m-left">:</label>
+                      <select 
+                        onChange={this.discTimes}
+                        value={this.state.courses[this.findIndex(course.id)].discTimes.fall[index].end[1]}
+                        data-courseid={course.id}
+                        data-quarter="fall"
+                        data-discindex={index}
+                        data-type="end-min"
+                        className="custom-select" 
+                        style={{width: "auto"}}
+                      >
+                        <option value="-1">End Min</option>
+                        {[...Array(60)].map((x, i) =>
+                        <option value={i}>
+                          {this.padDigits(i)}
+                        </option>)}
+                      </select>
+                      <select 
+                        onChange={this.discTimes}
+                        value={this.state.courses[this.findIndex(course.id)].discTimes.fall[index].end[2]}
+                        data-courseid={course.id}
+                        data-quarter="fall"
+                        data-discindex={index}
+                        data-type="end-am-pm"
+                      >
+                        <option value="0">AM</option>
+                        <option value="1">PM</option>
+                      </select>
+                    </div>
+                  </React.Fragment>
                   ))}
                   <button 
                     onClick={() => this.addDiscussion(course.id, 'fall')} 
@@ -389,7 +691,7 @@ class Input extends Component {
                 </div>
               </div>
               {/* END: Fall Quarter */}
-
+              
               {/* Remove Course */}
               <button onClick={() => this.removeCourse(course.id)} className="btn btn-danger btn-sm m-top">Remove Course</button>
               <hr className="hr" />
@@ -438,4 +740,4 @@ class App extends Component {
   }
 }
 
-export default App;
+export default App
