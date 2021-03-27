@@ -24,6 +24,7 @@ export const courses_sm = [
     },
     series: false,
     seriesIndex: 0, 
+    unique: false,
     pref: "fall",
     prereqs: null,
     coreqs: null
@@ -53,6 +54,7 @@ export const courses_sm = [
     },
     series: false,
     seriesIndex: 0, 
+    unique: false,
     pref: "fall",
     prereqs: null,
     coreqs: null
@@ -82,6 +84,7 @@ export const courses_sm = [
     },
     series: false,
     seriesIndex: 0, 
+    unique: false,
     pref: "",
     prereqs: null,
     coreqs: null
@@ -111,6 +114,7 @@ export const courses_sm = [
     },
     series: false,
     seriesIndex: 0, 
+    unique: true,
     pref: "",
     prereqs: [2],
     coreqs: null
@@ -140,6 +144,7 @@ export const courses_sm = [
     },
     series: false,
     seriesIndex: 0, 
+    unique: true,
     pref: "",
     prereqs: null,
     coreqs: null
@@ -172,6 +177,7 @@ export const courses_lg = [
     },
     series: false,
     seriesIndex: 0, 
+    unique: false,
     pref: "fall",
     prereqs: null,
     coreqs: null
@@ -201,6 +207,7 @@ export const courses_lg = [
     },
     series: false,
     seriesIndex: 0, 
+    unique: false,
     pref: "",
     prereqs: null,
     coreqs: null
@@ -230,6 +237,7 @@ export const courses_lg = [
     },
     series: false,
     seriesIndex: 0, 
+    unique: false,
     pref: "fall",
     prereqs: null,
     coreqs: null
@@ -259,6 +267,7 @@ export const courses_lg = [
     },
     series: false,
     seriesIndex: 0, 
+    unique: false,
     pref: "",
     prereqs: null,
     coreqs: null
@@ -288,6 +297,7 @@ export const courses_lg = [
     },
     series: false,
     seriesIndex: 0, 
+    unique: false,
     pref: "",
     prereqs: null,
     coreqs: null
@@ -317,6 +327,7 @@ export const courses_lg = [
     },
     series: false,
     seriesIndex: 0, 
+    unique: true,
     pref: "",
     prereqs: null,
     coreqs: null
@@ -346,6 +357,7 @@ export const courses_lg = [
     },
     series: false,
     seriesIndex: 0, 
+    unique: true,
     pref: "",
     prereqs: [3],
     coreqs: null
@@ -375,6 +387,7 @@ export const courses_lg = [
     },
     series: false,
     seriesIndex: 0, 
+    unique: true,
     pref: "",
     prereqs: null,
     coreqs: null
@@ -404,6 +417,7 @@ export const courses_lg = [
     },
     series: false,
     seriesIndex: 0, 
+    unique: true,
     pref: "",
     prereqs: null,
     coreqs: null
@@ -435,6 +449,7 @@ export const courses_lg = [
     },
     series: true,
     seriesIndex: 0, 
+    unique: true,
     pref: "",
     prereqs: null,
     coreqs: null
@@ -466,6 +481,7 @@ export const courses_lg = [
     },
     series: true,
     seriesIndex: 1, 
+    unique: true,
     pref: "",
     prereqs: null,
     coreqs: null
@@ -497,6 +513,7 @@ export const courses_lg = [
     },
     series: true,
     seriesIndex: 2, 
+    unique: true,
     pref: "",
     prereqs: null,
     coreqs: null

@@ -1,18 +1,23 @@
 import React, { Component } from 'react';
-import { courses_sm, courses_lg } from '../SampleData';
+import { courses_sm, courses_lg } from '../utils/SampleData';
 import 'bootstrap/dist/css/bootstrap.css';
 import '../App.css';
 
 // Input data regarding classes over all 3 quarteres
 class Input extends Component {
-    state = { 
-      currentId: 1,
-      courses: [],
-      maxFour: false,
-      balance: false,
-      quarters: ["fall", "winter", "spring"],
-      dows: ["M", "Tu", "W", "Th", "F"]
-    }
+
+    // Initializes internal state using data from 'App' component
+    constructor(props) {
+        super(props);
+        this.state = {
+            currentId: props.currentId,
+            courses: props.courses,
+            maxFour: props.maxFour,
+            balance: props.balance,
+            quarters: ["fall", "winter", "spring"],
+            dows: ["M", "Tu", "W", "Th", "F"]
+        };
+    };
 
     ////////////////////////////
     // Testing w/ Sample Data //
@@ -96,6 +101,7 @@ class Input extends Component {
                     },
                     series: false,
                     seriesIndex: 0, 
+                    unique: false,
                     pref: "",
                     prereqs: [],
                     coreqs: []
@@ -148,6 +154,7 @@ class Input extends Component {
                       },
                       series: true,
                       seriesIndex: 0,
+                      unique: true,
                       pref: "",
                       prereqs: [],
                       coreqs: []
@@ -182,6 +189,7 @@ class Input extends Component {
                       },
                       series: true,
                       seriesIndex: 1,
+                      unique: true,
                       pref: "",
                       prereqs: [], 
                       coreqs: []
@@ -216,12 +224,30 @@ class Input extends Component {
                       },
                       series: true,
                       seriesIndex: 2,
+                      unique: true,
                       pref: "",
                       prereqs: [],
                       coreqs: []
                     }]
         }));
       }
+    };
+
+    // Clears all user input data
+    clear = () => {
+        if (this.state.courses.length === 0) {
+            alert('There is no course data to clear.');
+            return;
+        };
+
+        this.setState({
+            currentId: 1,
+            courses: [],
+            maxFour: false,
+            balance: false,
+            quarters: ["fall", "winter", "spring"],
+            dows: ["M", "Tu", "W", "Th", "F"]
+        });
     };
   
     /////////////////////////////////////
@@ -339,15 +365,25 @@ class Input extends Component {
     /////////////////////////
   
     // Update whether or not a course is available in a given quarter
+    // Also update if a course is only offered in a single quarter
     changeAvail = (courseId, quarter) => {
       let index = this.findIndex(courseId);
       let courses = [...this.state.courses];
   
       let avail = courses[index].available[quarter];
       courses[index].available[quarter] = !(avail);
+
+      let offerings = 0;
+      for (let i = 0; i < this.state.quarters.length; i++) {
+          if (courses[index].available[this.state.quarters[i]]) {
+              offerings = offerings + 1;
+          };
+      };
+
+      courses[index].unique = (offerings === 0 || offerings === 1);
       this.setState({ courses });
     };
-  
+   
     // Update whether or not a course has a disc. section for a given quarter
     changeDisc = (courseId, quarter) => {
       let index = this.findIndex(courseId);
@@ -532,7 +568,7 @@ class Input extends Component {
                     <div className="form-check">
                       <input 
                         onChange={this.prereqStatus}
-                        checked={this.state.courses[this.findIndex(course.id)].prereqs === null} 
+                        checked={course.prereqs === null} 
                         id={course.id}
                         className="form-check-input" 
                         type="checkbox" 
@@ -541,15 +577,14 @@ class Input extends Component {
                     </div>
                   </div>
                   <div 
-                    hidden={this.state.courses[this.findIndex(course.id)].prereqs === null} 
+                    hidden={course.prereqs === null} 
                     className="input-group"
                   >
                       {this.state.courses.filter(prereq => prereq.id !== course.id).map((prereq) => (
                         <div key={prereq.id} className="form-check m-right">
                           <input 
                             onChange={() => this.editPrereqs(course.id, prereq.id)}
-                            checked={this.state.courses[this.findIndex(course.id)].prereqs !== null &&
-                                    this.state.courses[this.findIndex(course.id)].prereqs.includes(prereq.id)}
+                            checked={course.prereqs !== null && course.prereqs.includes(prereq.id)}
                             className="form-check-input" 
                             type="checkbox" 
                           />
@@ -564,7 +599,7 @@ class Input extends Component {
                     <div className="form-check">
                       <input 
                         onChange={this.coreqStatus}
-                        checked={this.state.courses[this.findIndex(course.id)].coreqs === null} 
+                        checked={course.coreqs === null} 
                         id={course.id}
                         className="form-check-input" 
                         type="checkbox" 
@@ -572,16 +607,12 @@ class Input extends Component {
                       <label className="form-check-label">None</label>
                     </div>
                   </div>
-                  <div 
-                    hidden={this.state.courses[this.findIndex(course.id)].coreqs === null} 
-                    className="input-group"
-                  >
+                  <div hidden={course.coreqs === null} className="input-group">
                       {this.state.courses.filter(coreq => coreq.id !== course.id).map((coreq) => (
                         <div key={coreq.id} className="form-check m-right">
                           <input 
                             onChange={() => this.editCoreqs(course.id, coreq.id)}
-                            checked={this.state.courses[this.findIndex(course.id)].coreqs !== null &&
-                                    this.state.courses[this.findIndex(course.id)].coreqs.includes(coreq.id)}
+                            checked={course.coreqs !== null && course.coreqs.includes(coreq.id)}
                             className="form-check-input" 
                             type="checkbox" 
                           />
@@ -591,18 +622,18 @@ class Input extends Component {
                   </div>
   
                   {/* Course Timing Preferences */}
-                  <div className="m-top" hidden={this.state.courses[this.findIndex(course.id)].series}>
+                  <div className="m-top" hidden={course.series || course.unique}>
                     <h4>Course Timing</h4>
                     <h6>Select the quarter you would like to take this course, if possible.</h6>
                     <div className="input-group m-bottom">
                       <select 
                         onChange={this.changePref}
                         data-courseid={course.id}
-                        value={this.state.courses[this.findIndex(course.id)].pref}
+                        value={course.pref}
                         className="custom-select" 
                       >
                         <option value="">No Preference</option>
-                        {this.state.quarters.map((quarter) => (
+                        {this.state.quarters.filter(quarter => course.available[quarter]).map((quarter) => (
                         <React.Fragment>
                           <option value={quarter}>{this.capitalize(quarter)}</option>
                         </React.Fragment>
@@ -622,7 +653,7 @@ class Input extends Component {
                     <div className="form-check">
                       <input 
                         onChange={() => this.changeAvail(course.id, quarter)}
-                        checked={!(this.state.courses[this.findIndex(course.id)].available[quarter])}
+                        checked={!(course.available[quarter])}
                         disabled={course.series && this.state.quarters[course.seriesIndex] !== quarter}
                         className="form-check-input" 
                         type="checkbox" 
@@ -634,8 +665,8 @@ class Input extends Component {
                     <div className="form-check">
                       <input 
                         onChange = {() => this.changeDisc(course.id, quarter)}
-                        checked={!(this.state.courses[this.findIndex(course.id)].available[quarter]) ||
-                          !(this.state.courses[this.findIndex(course.id)].disc[quarter])}
+                        checked={!(course.available[quarter]) ||
+                          !(course.disc[quarter])}
                         disabled={course.series && this.state.quarters[course.seriesIndex] !== quarter}
                         className="form-check-input" 
                         type="checkbox" 
@@ -646,7 +677,7 @@ class Input extends Component {
                     </div>
   
                     {/* Lecture Times */}
-                    <div hidden={!(this.state.courses[this.findIndex(course.id)].available[quarter])}>
+                    <div hidden={!(course.available[quarter])}>
                       <h5 className="m-top-lg">Lectures</h5>
                       {course.lecTimes[quarter].map((lecTime, lecIndex) => (
                         <React.Fragment>
@@ -772,7 +803,7 @@ class Input extends Component {
                       </button>
   
                       {/* Discussion Times */}
-                      <div hidden={!(this.state.courses[this.findIndex(course.id)].disc[quarter])}>
+                      <div hidden={!(course.disc[quarter])}>
                         <h5 className="m-top-lg">Discussion Section</h5>
                         {course.discTimes[quarter].map((discTime, discIndex) => (
                           <React.Fragment>
@@ -910,7 +941,13 @@ class Input extends Component {
           <button onClick={this.addCourse} className="btn btn-primary m-right-sm">Add Course</button>
           <button onClick={this.addSeries} className="btn btn-primary m-right-sm">Add Year-Long Series</button>
           <button onClick={this.sampleDataLg} className="btn btn-primary m-right-sm">Populate Sample Data (Large)</button>
-          <button onClick={this.sampleDataSm} className="btn btn-primary">Populate Sample Data (Small)</button>
+          <button onClick={this.sampleDataSm} className="btn btn-primary m-right-sm">Populate Sample Data (Small)</button>
+          <button onClick={this.clear} className="btn btn-danger m-right-sm">Clear Data</button>
+          <button onClick={() => this.props.onTransition(this.state.currentId, 
+                                                        this.state.courses, 
+                                                        this.state.maxFour, 
+                                                        this.state.balance)} 
+                            className="btn btn-success">Compute Possible Schedules</button>
           <div className="form-check m-top-sm">
             <input 
               onChange={this.maxFour} 
