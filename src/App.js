@@ -1,13 +1,15 @@
 // import logo from './logo.svg';
 import React, { Component } from 'react';
 import Input from './components/Input';
+import PreCoReq from './components/PreCoReq';
+import PreCoReq2 from './components/PreCoReq2';
 import Output from './components/Output';
 import 'bootstrap/dist/css/bootstrap.css';
 import './App.css';
 
 class App extends Component {
   state = {
-    input: true,
+    screen: "input",
     currentId: 1,
     courses: [],
     maxFour: false,
@@ -16,34 +18,52 @@ class App extends Component {
     dows: ["M", "Tu", "W", "Th", "F"]
   }
 
-  // Toggles between 'Input' & 'Output' components
-  handleTransition = (currentId, courses, maxFour, balance) => {
-    let input = !(this.state.input);
-    this.setState({ input, currentId, courses, maxFour, balance });
+  // Functions to toggle between various components screens
+  handleMajorTransition = (screen, currentId, courses, maxFour, balance) => {
+    this.setState({ screen, currentId, courses, maxFour, balance });
   };
 
+  // See previous comment
+  handleMinorTransition = (screen, courses) => {
+    this.setState({ screen, courses });
+  }
+
   render() {
+    const screen = this.state.screen;
+    let displayScreen;
+    if (screen === "input") {
+      displayScreen = <Input 
+                        onTransition={this.handleMajorTransition} 
+                        currentId={this.state.currentId} 
+                        courses={this.state.courses} 
+                        maxFour={this.state.maxFour} 
+                        balance={this.state.balance}
+                      />;
+    } else if (screen === "preCoReq") {
+      displayScreen = <PreCoReq 
+                        onTransition={this.handleMinorTransition}
+                        courses={this.state.courses}
+                      />;
+    } else if (screen === "preCoReq2") {
+      displayScreen = <PreCoReq2
+                        onTransition={this.handleMinorTransition}
+                        courses={this.state.courses}
+                      />;
+    } else {
+      displayScreen = <Output
+                        onTransition={this.handleMinorTransition} 
+                        currentId={this.state.currentId} 
+                        courses={this.state.courses} 
+                        maxFour={this.state.maxFour} 
+                        balance={this.state.balance}
+                      />;
+    };
+
     return (
       <div className="global">
         <h1 style={{marginTop: "1%"}}>AutoSchedule</h1>
         <hr className="hr"/>
-        {this.state.input 
-        ? 
-        <Input 
-          onTransition={this.handleTransition} 
-          currentId={this.state.currentId} 
-          courses={this.state.courses} 
-          maxFour={this.state.maxFour} 
-          balance={this.state.balance}
-        /> 
-        : 
-        <Output
-          onTransition={this.handleTransition} 
-          currentId={this.state.currentId} 
-          courses={this.state.courses} 
-          maxFour={this.state.maxFour} 
-          balance={this.state.balance}
-        />}
+        {displayScreen}
       </div>
     );
   }

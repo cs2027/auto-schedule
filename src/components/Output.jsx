@@ -3,6 +3,7 @@ import { courses_sm, courses_lg } from '../utils/SampleData';
 import 'bootstrap/dist/css/bootstrap.css';
 import '../App.css';
 
+// Displays suggested course schedule
 class Output extends Component {
 
     // Initializes internal state using data from 'App' component
@@ -18,19 +19,15 @@ class Output extends Component {
         };
     };
 
-    ///////////////////
-    // Render method //
-    ///////////////////
-    
     render() { 
         return (  
             <React.Fragment>
                 <div>Output Component</div>
-                <button onClick={() => this.props.onTransition(this.state.currentId, 
-                                                            this.state.courses, 
-                                                            this.state.maxFour, 
-                                                            this.state.balance)} 
-                        className="btn btn-success">Edit Courses</button>
+                <button onClick={() => this.props.onTransition("input", this.state.courses)} 
+                        className="btn btn-warning m-bottom-sm">Edit Original Courses</button>
+                <br />
+                <button onClick={() => this.props.onTransition("preCoReq", this.state.courses)} 
+                        className="btn btn-success">Edit Pre/Co-Requisites</button>
             </React.Fragment>
         );
     };

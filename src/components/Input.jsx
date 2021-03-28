@@ -3,7 +3,7 @@ import { courses_sm, courses_lg } from '../utils/SampleData';
 import 'bootstrap/dist/css/bootstrap.css';
 import '../App.css';
 
-// Input data regarding classes over all 3 quarteres
+// Input data regarding classes over all 3 quarters
 class Input extends Component {
 
     // Initializes internal state using data from 'App' component
@@ -56,12 +56,6 @@ class Input extends Component {
       };
     };
   
-    // Pad numbers to 2 digits
-    // Used to format single-digit minutes nicely (8:0 AM --> 8:00 AM)
-    padDigits = (n) => {
-      return n.toLocaleString('en-US', {minimumIntegerDigits: 2, useGrouping:false});
-    };
-  
     // Capitalizes a word (1st letter becomes uppercase)
     capitalize = (str) => {
       return str.charAt(0).toUpperCase() + str.slice(1);
@@ -78,7 +72,7 @@ class Input extends Component {
         courses: [...oldState.courses, 
                   {
                     id: oldState.currentId, 
-                    title: `Course ${oldState.currentId}`, 
+                    title: `Course ${oldState.currentId}`,
                     lecTimes: {
                       fall: [{start: [-1, -1, 0], end: [-1, -1, 0], dow: [0, 0, 0, 0, 0]}],
                       winter: [{start: [-1, -1, 0], end: [-1, -1, 0], dow: [0, 0, 0, 0, 0]}],
@@ -105,7 +99,7 @@ class Input extends Component {
                     pref: "",
                     prereqs: [],
                     coreqs: []
-                  }]
+                  }],
       }));
     };
   
@@ -131,7 +125,7 @@ class Input extends Component {
           courses: [...oldState.courses, 
                     {
                       id: oldState.currentId, 
-                      title: `Course ${oldState.currentId}`, 
+                      title: `Course ${oldState.currentId}`,
                       lecTimes: {
                         fall: [{start: [-1, -1, 0], end: [-1, -1, 0], dow: [0, 0, 0, 0, 0]}],
                         winter: [{start: [-1, -1, 0], end: [-1, -1, 0], dow: [0, 0, 0, 0, 0]}],
@@ -158,7 +152,7 @@ class Input extends Component {
                       pref: "",
                       prereqs: [],
                       coreqs: []
-                    }]
+                    }],
         }));
       } else if (index === 1) {
         this.setState(oldState => ({
@@ -166,7 +160,7 @@ class Input extends Component {
           courses: [...oldState.courses, 
                     {
                       id: oldState.currentId, 
-                      title: `Course ${oldState.currentId}`, 
+                      title: `Course ${oldState.currentId}`,
                       lecTimes: {
                         fall: [{start: [-1, -1, 0], end: [-1, -1, 0], dow: [0, 0, 0, 0, 0]}],
                         winter: [{start: [-1, -1, 0], end: [-1, -1, 0], dow: [0, 0, 0, 0, 0]}],
@@ -193,7 +187,7 @@ class Input extends Component {
                       pref: "",
                       prereqs: [], 
                       coreqs: []
-                    }]
+                    }],
         }));
       } else {
         this.setState(oldState => ({
@@ -201,7 +195,7 @@ class Input extends Component {
           courses: [...oldState.courses, 
                     {
                       id: oldState.currentId, 
-                      title: `Course ${oldState.currentId}`, 
+                      title: `Course ${oldState.currentId}`,
                       lecTimes: {
                         fall: [{start: [-1, -1, 0], end: [-1, -1, 0], dow: [0, 0, 0, 0, 0]}],
                         winter: [{start: [-1, -1, 0], end: [-1, -1, 0], dow: [0, 0, 0, 0, 0]}],
@@ -228,7 +222,7 @@ class Input extends Component {
                       pref: "",
                       prereqs: [],
                       coreqs: []
-                    }]
+                    }],
         }));
       }
     };
@@ -279,72 +273,7 @@ class Input extends Component {
       this.setState({ courses });
     };
   
-    ////////////////////
-    // Course prereqs //
-    ////////////////////
-  
-    // Update whether or not a course has prereqs
-    prereqStatus = ({target}) => {
-      let index = this.findIndex(parseInt(target.id));
-      let courses = [...this.state.courses];
-  
-      if (courses[index].prereqs === null) {
-        courses[index].prereqs = [];
-      } else {
-        courses[index].prereqs = null;
-      }
-  
-      this.setState({ courses });
-    };
-  
-    // Add or remove a prereq for a course
-    editPrereqs = (courseId, prereqId) => {
-      let index = this.findIndex(courseId);
-      let courses = [...this.state.courses];
-    
-      if (courses[index].prereqs.includes(prereqId)) {
-        let prereqs = courses[index].prereqs;
-        courses[index].prereqs = prereqs.filter(Id => Id !== prereqId);
-      } else {
-        courses[index].prereqs.push(prereqId);
-      }
-  
-      this.setState({ courses });
-    };
-  
-    ////////////////////
-    // Course co-reqs //
-    ////////////////////
-    
-    // Update whether or not a course has co-requisites
-    coreqStatus = ({target}) => {
-      let index = this.findIndex(parseInt(target.id));
-      let courses = [...this.state.courses];
-  
-      if (courses[index].coreqs === null) {
-        courses[index].coreqs = [];
-      } else {
-        courses[index].coreqs = null;
-      }
-  
-      this.setState({ courses });
-    }
-  
-    // Edit co-requisites for a given course
-    editCoreqs = (courseId, coreqId) => {
-      let index = this.findIndex(courseId);
-      let courses = [...this.state.courses];
-    
-      if (courses[index].coreqs.includes(coreqId)) {
-        let coreqs = courses[index].coreqs;
-        courses[index].coreqs = coreqs.filter(Id => Id !== coreqId);
-      } else {
-        courses[index].coreqs.push(coreqId);
-      }
-  
-      this.setState({ courses });
-    };
-  
+
     ///////////////////////////////
     // Course timing preferences //
     ///////////////////////////////
@@ -562,65 +491,6 @@ class Input extends Component {
                     />
                   </div>
   
-                  {/* Prereqs */}
-                  <h4>Prerequisites:</h4>
-                  <div className="input-group">
-                    <div className="form-check">
-                      <input 
-                        onChange={this.prereqStatus}
-                        checked={course.prereqs === null} 
-                        id={course.id}
-                        className="form-check-input" 
-                        type="checkbox" 
-                      />
-                      <label className="form-check-label">None</label>
-                    </div>
-                  </div>
-                  <div 
-                    hidden={course.prereqs === null} 
-                    className="input-group"
-                  >
-                      {this.state.courses.filter(prereq => prereq.id !== course.id).map((prereq) => (
-                        <div key={prereq.id} className="form-check m-right">
-                          <input 
-                            onChange={() => this.editPrereqs(course.id, prereq.id)}
-                            checked={course.prereqs !== null && course.prereqs.includes(prereq.id)}
-                            className="form-check-input" 
-                            type="checkbox" 
-                          />
-                          <label className="form-check-label">{prereq.title}</label>
-                        </div>
-                      ))}
-                  </div>
-  
-                  {/* Co-reqs */}
-                  <h4 className="m-top">Co-Requisites:</h4>
-                  <div className="input-group">
-                    <div className="form-check">
-                      <input 
-                        onChange={this.coreqStatus}
-                        checked={course.coreqs === null} 
-                        id={course.id}
-                        className="form-check-input" 
-                        type="checkbox" 
-                      />
-                      <label className="form-check-label">None</label>
-                    </div>
-                  </div>
-                  <div hidden={course.coreqs === null} className="input-group">
-                      {this.state.courses.filter(coreq => coreq.id !== course.id).map((coreq) => (
-                        <div key={coreq.id} className="form-check m-right">
-                          <input 
-                            onChange={() => this.editCoreqs(course.id, coreq.id)}
-                            checked={course.coreqs !== null && course.coreqs.includes(coreq.id)}
-                            className="form-check-input" 
-                            type="checkbox" 
-                          />
-                          <label className="form-check-label">{coreq.title}</label>
-                        </div>
-                      ))}
-                  </div>
-  
                   {/* Course Timing Preferences */}
                   <div className="m-top" hidden={course.series || course.unique}>
                     <h4>Course Timing</h4>
@@ -726,9 +596,13 @@ class Input extends Component {
                               style={{width: "auto"}}
                             >
                               <option value="-1">Start Min</option>
-                              {[...Array(60)].map((x, i) =>
+                              {[...Array(10)].map((x, i) =>
                               <option value={i}>
-                                {this.padDigits(i)}
+                                {"0" + i}
+                              </option>)}
+                              {[...Array(50)].map((x, i) =>
+                              <option value={i + 10}>
+                                {i + 10}
                               </option>)}
                             </select>
                             <select 
@@ -772,9 +646,13 @@ class Input extends Component {
                               style={{width: "auto"}}
                             >
                               <option value="-1">End Min</option>
-                              {[...Array(60)].map((x, i) =>
+                              {[...Array(10)].map((x, i) =>
                               <option value={i}>
-                                {this.padDigits(i)}
+                                {"0" + i}
+                              </option>)}
+                              {[...Array(50)].map((x, i) =>
+                              <option value={i + 10}>
+                                {i + 10}
                               </option>)}
                             </select>
                             <select 
@@ -852,9 +730,13 @@ class Input extends Component {
                               style={{width: "auto"}}
                             >
                               <option value="-1">Start Min</option>
-                              {[...Array(60)].map((x, i) =>
+                              {[...Array(10)].map((x, i) =>
                               <option value={i}>
-                                {this.padDigits(i)}
+                                {"0" + i}
+                              </option>)}
+                              {[...Array(50)].map((x, i) =>
+                              <option value={i + 10}>
+                                {i + 10}
                               </option>)}
                             </select>
                             <select 
@@ -898,9 +780,13 @@ class Input extends Component {
                               style={{width: "auto"}}
                             >
                               <option value="-1">End Min</option>
-                              {[...Array(60)].map((x, i) =>
+                              {[...Array(10)].map((x, i) =>
                               <option value={i}>
-                                {this.padDigits(i)}
+                                {"0" + i}
+                              </option>)}
+                              {[...Array(50)].map((x, i) =>
+                              <option value={i + 10}>
+                                {i + 10}
                               </option>)}
                             </select>
                             <select 
@@ -943,11 +829,12 @@ class Input extends Component {
           <button onClick={this.sampleDataLg} className="btn btn-primary m-right-sm">Populate Sample Data (Large)</button>
           <button onClick={this.sampleDataSm} className="btn btn-primary m-right-sm">Populate Sample Data (Small)</button>
           <button onClick={this.clear} className="btn btn-danger m-right-sm">Clear Data</button>
-          <button onClick={() => this.props.onTransition(this.state.currentId, 
+          <button onClick={() => this.props.onTransition("preCoReq",
+                                                        this.state.currentId, 
                                                         this.state.courses, 
                                                         this.state.maxFour, 
                                                         this.state.balance)} 
-                            className="btn btn-success">Compute Possible Schedules</button>
+                            className="btn btn-success">Enter Pre/Co-Requisites</button>
           <div className="form-check m-top-sm">
             <input 
               onChange={this.maxFour} 
