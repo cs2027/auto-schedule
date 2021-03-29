@@ -12,6 +12,7 @@ class Input extends Component {
         this.state = {
             currentId: props.currentId,
             courses: props.courses,
+            tenMinGap: props.tenMinGap,
             maxFour: props.maxFour,
             balance: props.balance,
             quarters: ["fall", "winter", "spring"],
@@ -27,6 +28,7 @@ class Input extends Component {
         this.setState({
             currentId: 6,
             courses: courses_sm,
+            tenMinGap: true,
             maxFour: true,
             balance: true
         });
@@ -36,6 +38,7 @@ class Input extends Component {
         this.setState({
             currentId: 13,
             courses: courses_lg,
+            tenMinGap: true,
             maxFour: true,
             balance: true
         });
@@ -97,8 +100,8 @@ class Input extends Component {
                     seriesIndex: 0, 
                     unique: false,
                     pref: "",
-                    prereqs: [],
-                    coreqs: []
+                    prereqs: null,
+                    coreqs: null
                   }],
       }));
     };
@@ -150,8 +153,8 @@ class Input extends Component {
                       seriesIndex: 0,
                       unique: true,
                       pref: "",
-                      prereqs: [],
-                      coreqs: []
+                      prereqs: null,
+                      coreqs: null
                     }],
         }));
       } else if (index === 1) {
@@ -185,8 +188,8 @@ class Input extends Component {
                       seriesIndex: 1,
                       unique: true,
                       pref: "",
-                      prereqs: [], 
-                      coreqs: []
+                      prereqs: null,
+                      coreqs: null
                     }],
         }));
       } else {
@@ -220,8 +223,8 @@ class Input extends Component {
                       seriesIndex: 2,
                       unique: true,
                       pref: "",
-                      prereqs: [],
-                      coreqs: []
+                      prereqs: null,
+                      coreqs: null
                     }],
         }));
       }
@@ -237,7 +240,8 @@ class Input extends Component {
         this.setState({
             currentId: 1,
             courses: [],
-            maxFour: false,
+            tenMinGap: true,
+            maxFour: true,
             balance: false,
             quarters: ["fall", "winter", "spring"],
             dows: ["M", "Tu", "W", "Th", "F"]
@@ -247,6 +251,12 @@ class Input extends Component {
     /////////////////////////////////////
     // High-level algorithm specifiers //
     /////////////////////////////////////
+
+    // Enforce a 10-min gap between classes
+    tenMinGap = () => {
+      let tenMinGap = !(this.state.tenMinGap);
+      this.setState({ tenMinGap });
+    }
   
     // Enforce maximum of 4 classes per quarter
     maxFour = () => {
@@ -836,6 +846,15 @@ class Input extends Component {
                                                         this.state.balance)} 
                             className="btn btn-success">Enter Pre/Co-Requisites</button>
           <div className="form-check m-top-sm">
+            <input 
+              onChange={this.tenMinGap} 
+              checked={this.state.tenMinGap} 
+              className="form-check-input" 
+              type="checkbox" 
+            />
+            <label className="form-check-label">Enforce a 10-Min Gap Between Classes</label>
+          </div>
+          <div className="form-check">
             <input 
               onChange={this.maxFour} 
               checked={this.state.maxFour} 

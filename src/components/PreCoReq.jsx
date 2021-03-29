@@ -9,7 +9,7 @@ class PreCoReq extends Component {
     // Initializes internal state using data from 'App' component
     constructor(props) {
         super(props);
-        this.state = {courses: props.courses };
+        this.state = { courses: props.courses };
     };
   
     // Find course index in internal list, based on its Id number

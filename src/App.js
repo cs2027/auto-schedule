@@ -9,10 +9,11 @@ import './App.css';
 
 class App extends Component {
   state = {
-    screen: "input",
+    screen: "output",
     currentId: 1,
     courses: [],
-    maxFour: false,
+    tenMinGap: true,
+    maxFour: true,
     balance: false,
     quarters: ["fall", "winter", "spring"],
     dows: ["M", "Tu", "W", "Th", "F"]
@@ -36,6 +37,7 @@ class App extends Component {
                         onTransition={this.handleMajorTransition} 
                         currentId={this.state.currentId} 
                         courses={this.state.courses} 
+                        tenMinGap={this.state.tenMinGap}
                         maxFour={this.state.maxFour} 
                         balance={this.state.balance}
                       />;
@@ -54,6 +56,7 @@ class App extends Component {
                         onTransition={this.handleMinorTransition} 
                         currentId={this.state.currentId} 
                         courses={this.state.courses} 
+                        tenMinGap={this.state.tenMinGap}
                         maxFour={this.state.maxFour} 
                         balance={this.state.balance}
                       />;
