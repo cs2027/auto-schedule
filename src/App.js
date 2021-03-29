@@ -12,6 +12,7 @@ class App extends Component {
     screen: "output",
     currentId: 1,
     courses: [],
+    coursesParsed: [],
     tenMinGap: true,
     maxFour: true,
     balance: false,
@@ -56,6 +57,7 @@ class App extends Component {
                         onTransition={this.handleMinorTransition} 
                         currentId={this.state.currentId} 
                         courses={this.state.courses} 
+                        coursesParsed={this.state.coursesParsed}
                         tenMinGap={this.state.tenMinGap}
                         maxFour={this.state.maxFour} 
                         balance={this.state.balance}

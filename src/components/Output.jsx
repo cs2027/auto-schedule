@@ -12,14 +12,29 @@ class Output extends Component {
         this.state = {
             currentId: props.currentId,
             courses: props.courses,
+            coursesParsed: props.coursesParsed,
             tenMinGap: props.tenMinGap,
             maxFour: props.maxFour,
             balance: props.balance,
             quarters: ["fall", "winter", "spring"],
             dows: ["M", "Tu", "W", "Th", "F"],
-            overlaps: [] // Field to hold course overlaps
+            fallOverlaps: [], // Course overlaps during each quarter (1)
+            winterOverlaps: [],
+            springOverlaps: []
         };
     };
+
+    /* 
+    (1) overlaps are of the following form:
+    {
+        courseId1: ID of 1st course, 
+        type1: "lec" vs. "disc", 
+        index1: index within the list of lecture/discussion sections for 1st course
+        courseId2: ID of 2nd course, 
+        type2: "lec" vs "disc", i
+        index2: index within the list of lecture/discussion sections for 2nd course
+    });
+    */
 
     ////////////////////////////
     // Testing w/ Sample Data //
@@ -49,14 +64,14 @@ class Output extends Component {
         alert('Sample Data Added (Large)');
     };
 
-    // Parse course objects into readable times
-    parsePeriod = (period) => {
+    // Parse period into a nice, readable format
+    parsePeriod = (period, type) => {
         let start = period.start;
         let end = period.end;
 
-        let startTime = `${start[0]}:${start[1]} ${start[2] === 0 ? " AM" : " PM"}`;
-        let endTime = `${end[0]}:${end[1]} ${end[2] === 0 ? " AM" : " PM"}`;
-        return `(Start: ${startTime}, End: ${endTime})`;
+        let startTime = `${start[0]}:${start[1] < 10 ? "0" + start[1] : start[1]} ${start[2] === 0 ? " AM" : " PM"}`;
+        let endTime = `${end[0]}:${end[1] < 10 ? "0" + end[1] : end[1]} ${end[2] === 0 ? " AM" : " PM"}`;
+        return ` (Start: ${startTime}, End: ${endTime}, Type: ${type})`;
     };
 
     ///////////////////////////
@@ -69,134 +84,106 @@ class Output extends Component {
 
         for (let i = Math.min(courseId - 1, courses.length - 1); i >= 0; i--) {
             if (courses[i].id === courseId) {
-            return i;
+                return i;
             };
         };
+    };
+
+    // Add each lecture & discussion section for every course as a distinct array entry
+    parseCourses = () => {
+        let coursesParsed = [...this.state.coursesParsed];
+
+        // Loop over each course
+        for (let i = 0; i < this.state.courses.length; i++) {
+            let course = this.state.courses[i];
+
+            for (let j = 0; j < this.state.quarters.length; j++) {
+                let quarter = this.state.quarters[j];
+
+                // Add each lecture for the current course
+                if (course.available[quarter]) {
+                    for (let k = 0; k < course.lecTimes[quarter].length; k++) {
+                        coursesParsed.push({courseId: course.id, quarter: quarter, type: "lec", index: k});
+                    };
+                };
+
+                // Add each dicussino section for the current course
+                if (course.disc[quarter]) {
+                    for (let l = 0; l < course.discTimes[quarter].length; l++) {
+                        coursesParsed.push({courseId: course.id, quarter: quarter, type: "disc", index: l});
+                    };
+                };
+            };
+        };
+
+        // Update internal state
+        this.setState({ coursesParsed });
     };
 
     // Determine all overlaps between the various courses
     computeAllOverlaps = () => {
-        let overlapsRaw = [] // Holds course overlaps
-        let numCourses = this.state.courses.length;
+        let fallOverlaps = [...this.state.fallOverlaps]; 
+        let winterOverlaps = [...this.state.winterOverlaps];
+        let springOverlaps = [...this.state.springOverlaps];
+        let coursesParsed = [...this.state.coursesParsed];
+        let numPeriods = coursesParsed.length;
 
-        // Loop over all pairs of possible course combos
-        for (let i = 0; i < numCourses; i++) {
-            for (let j = i + 1; j < numCourses; j++) {
-                for (let k = 0; k < 3; k++) {
-                    let course1 = this.state.courses[i];
-                    let course2 = this.state.courses[j];
-                    let quarter = this.state.quarters[k];
+        // Loop over every possible lecture & discussion section
+        for (let i = 0; i < numPeriods; i++) {
+            for (let j = i + 1; j < numPeriods; j++) {
+                let period1 = coursesParsed[i];
+                let period2 = coursesParsed[j];
+                let q1 = period1.quarter;
+                let q2 = period2.quarter;
 
-                    // Either course is unavailable -> no possible overlap
-                    if (!(course1.available[quarter]) || !(course2.available[quarter])) {
-                        continue;
-                    };
+                // Do not need to consider overlaps within same course or for different quarters
+                if (period1.courseId === period2.courseId || q1 !== q2) {
+                    continue;
+                };
 
-                    let lecs1 = course1.lecTimes[quarter].length;
-                    let lecs2 = course2.lecTimes[quarter].length;
-                    let discs1 = course1.discTimes[quarter].length;
-                    let discs2 = course2.discTimes[quarter].length;
-
-                    // For each combo of lecture & disc. times, see if an overlap occurs
-                    for (let w = 0; w < lecs1; w++) {
-                        for (let x = 0; x < lecs2; x++) {
-                            for (let y = 0; y < discs1; y++) {
-                                for (let z = 0; z < discs2; z++) {
-                                    overlapsRaw.push(this.courseOverlap(course1, course2, quarter, w, x, y, z));
-                                }
-                            }
-                        }
-                    };
-                }
-            }
+                // Add course overlaps to the correct list, based on the quarter
+                if (this.weeklyOverlap(period1, period2)) {
+                    if (q1 === "fall") {
+                        fallOverlaps.push({courseId1: period1.courseId, type1: period1.type, index1: period1.index,
+                                courseId2: period2.courseId, type2: period2.type, index2: period2.index});
+                    } else if (q1 === "winter") {
+                        winterOverlaps.push({courseId1: period1.courseId, type1: period1.type, index1: period1.index,
+                            courseId2: period2.courseId, type2: period2.type, index2: period2.index});
+                    } else {
+                        springOverlaps.push({courseId1: period1.courseId, type1: period1.type, index1: period1.index,
+                            courseId2: period2.courseId, type2: period2.type, index2: period2.index});
+                    }
+                };
+            };
         };
 
-        // Update the internal state field 'overlaps'
-        let overlaps = [].concat.apply([], overlapsRaw);
-        this.setState({ overlaps });
+        // Update internal state
+        this.setState({ fallOverlaps, winterOverlaps, springOverlaps });
     };
 
-    // Helper function to determine overlap between two coursres
-    courseOverlap = (course1, course2, quarter, lecIndex1, lecIndex2, discIndex1, discIndex2) => {
+    // Determine if there is any overlap between two course periods in a week
+    weeklyOverlap = (period1, period2) => {
         const numDows = 5;
-        let overlaps = [] // Holds course overlaps
-        let c1Times = []; // Holds course times for 'course1' and 'course2'
-        let c2Times = [];
+        let time1 = this.findPeriod(period1.courseId, period1.quarter, period1.type, period1.index);
+        let time2 = this.findPeriod(period2.courseId, period2.quarter, period2.type, period2.index);
 
         for (let i = 0; i < numDows; i++) {
-            c1Times.push([]);
-            c2Times.push([]);
-        };
-
-        // Add lecture times for both courses
-        for (let i = 0; i < numDows; i++) {
-            if (course1.lecTimes[quarter][lecIndex1].dow[i] === 1) {
-                c1Times[i].push({start: course1.lecTimes[quarter][lecIndex1].start, 
-                                end: course1.lecTimes[quarter][lecIndex1].end,
-                                index: lecIndex1,
-                                type: "lec"});
-            };
-
-            if (course2.lecTimes[quarter][lecIndex2].dow[i] === 1) {
-                c2Times[i].push({start: course2.lecTimes[quarter][lecIndex2].start, 
-                                end: course2.lecTimes[quarter][lecIndex2].end,
-                                index: lecIndex2,
-                                type: "lec"});
-            };
-        };
-
-        // Add discussion times for both courses, if applicable
-        if (course1.disc[quarter]) {
-            for (let i = 0; i < numDows; i++) {
-                if (course1.discTimes[quarter][discIndex1].dow[i] === 1) {
-                    c1Times[i].push({start: course1.discTimes[quarter][discIndex1].start, 
-                                    end: course1.discTimes[quarter][discIndex1].end,
-                                    index: discIndex1, 
-                                    type: "disc"});
-                };
-            };
-        };
-
-        if (course2.disc[quarter]) {
-            for (let i = 0; i < numDows; i++) {
-                if (course2.discTimes[quarter][discIndex2].dow[i] === 1) {
-                    c2Times[i].push({start: course2.discTimes[quarter][discIndex2].start, 
-                                    end: course2.discTimes[quarter][discIndex2].end,
-                                    index: discIndex2, 
-                                    type: "disc"});
-                };
-            };
-        };
-
-        // For each day of the week, see if the courses have any overlap 
-        for (let i = 0; i < numDows; i++) {
-            let periods1 = c1Times[i].length;
-            let periods2 = c2Times[i].length;
-
-            if (periods1 === 0 || periods2 === 0) {
+            if (time1.dow[i] === 0 || time2.dow[i] === 0) {
                 continue;
-            } else {
-                for (let j = 0; j < periods1; j++) {
-                    for (let k = 0; k < periods2; k++) {
-                        let time1 = c1Times[i][j];
-                        let time2 = c2Times[i][k];
+            };
 
-                        if (this.periodOverlap(time1, time2, this.state.tenMinGap)) {
-                            overlaps.push({quarter: quarter, 
-                                        courseId1: course1.id, type1: time1.type, index1: time1.index, 
-                                        courseId2: course2.id, type2: time2.type, index2: time2.index});
-                        }
-                    }
-                }
+            if (this.periodOverlap(time1, time2)) {
+                return true;
             };
         };
 
-        // Return all course overlaps
-        return overlaps;
+        return false;
     };
 
     // Determine if there is an overlap between two class periods
-    periodOverlap = (period1, period2, tenMinGap) => {
+    periodOverlap = (period1, period2) => {
+        let tenMinGap = this.state.tenMinGap;
+
         if (tenMinGap) {
             if (this.tenMinGap(period1.end, period2.start) ||
                 this.tenMinGap(period2.end, period1.start)) {
@@ -212,6 +199,11 @@ class Output extends Component {
                     return true;
                 }
         };
+    };
+
+    // Look up information about a specific lecture/discussion section
+    findPeriod = (courseId, quarter, type, index) => {
+        return this.state.courses[this.findIndex(courseId)][type === "lec" ? "lecTimes" : "discTimes"][quarter][index];
     };
 
     // Determine if 'time1' comes before 'time2'
@@ -245,28 +237,72 @@ class Output extends Component {
         return (  
             <React.Fragment>
                 <div>
+                    <h3>Fall Overlaps</h3>
                     <ul>
-                    {this.state.overlaps.map((overlap, index) => ( 
+                    {this.state.fallOverlaps.map((overlap, index) => ( 
                         <li key={index}>
                             {this.state.courses[this.findIndex(overlap.courseId1)].title}
                             {overlap.type1 === "lec"
                             ? 
-                            this.parsePeriod(this.state.courses[this.findIndex(overlap.courseId1)].lecTimes[overlap.quarter][overlap.index1])
+                            this.parsePeriod(this.state.courses[this.findIndex(overlap.courseId1)].lecTimes["fall"][overlap.index1], "Lecture")
                             : 
-                            this.parsePeriod(this.state.courses[this.findIndex(overlap.courseId1)].discTimes[overlap.quarter][overlap.index1])}, 
+                            this.parsePeriod(this.state.courses[this.findIndex(overlap.courseId1)].discTimes["fall"][overlap.index1], "Disc.")}
+                            {", "} 
                             {this.state.courses[this.findIndex(overlap.courseId2)].title}
                             {overlap.type2 === "lec"
                             ? 
-                            this.parsePeriod(this.state.courses[this.findIndex(overlap.courseId2)].lecTimes[overlap.quarter][overlap.index2])
+                            this.parsePeriod(this.state.courses[this.findIndex(overlap.courseId2)].lecTimes["fall"][overlap.index2], "Lecture")
                             : 
-                            this.parsePeriod(this.state.courses[this.findIndex(overlap.courseId2)].discTimes[overlap.quarter][overlap.index2])}
-                            ({overlap.quarter})
+                            this.parsePeriod(this.state.courses[this.findIndex(overlap.courseId2)].discTimes["fall"][overlap.index2], "Disc.")}
+                        </li>
+                    ))}
+                    </ul>
+
+                    <h3>Winter Overlaps</h3>
+                    <ul>
+                    {this.state.winterOverlaps.map((overlap, index) => ( 
+                        <li key={index}>
+                            {this.state.courses[this.findIndex(overlap.courseId1)].title}
+                            {overlap.type1 === "lec"
+                            ? 
+                            this.parsePeriod(this.state.courses[this.findIndex(overlap.courseId1)].lecTimes["winter"][overlap.index1], "Lecture")
+                            : 
+                            this.parsePeriod(this.state.courses[this.findIndex(overlap.courseId1)].discTimes["winter"][overlap.index1], "Disc.")}
+                            {", "}
+                            {this.state.courses[this.findIndex(overlap.courseId2)].title}
+                            {overlap.type2 === "lec"
+                            ? 
+                            this.parsePeriod(this.state.courses[this.findIndex(overlap.courseId2)].lecTimes["winter"][overlap.index2], "Lecture")
+                            : 
+                            this.parsePeriod(this.state.courses[this.findIndex(overlap.courseId2)].discTimes["winter"][overlap.index2], "Disc.")}
+                        </li>
+                    ))}
+                    </ul>
+
+                    <h3>Spring Overlaps</h3>
+                    <ul>
+                    {this.state.springOverlaps.map((overlap, index) => ( 
+                        <li key={index}>
+                            {this.state.courses[this.findIndex(overlap.courseId1)].title}
+                            {overlap.type1 === "lec"
+                            ? 
+                            this.parsePeriod(this.state.courses[this.findIndex(overlap.courseId1)].lecTimes["spring"][overlap.index1], "Lecture")
+                            : 
+                            this.parsePeriod(this.state.courses[this.findIndex(overlap.courseId1)].discTimes["spring"][overlap.index1], "Disc.")}
+                            {", "}
+                            {this.state.courses[this.findIndex(overlap.courseId2)].title}
+                            {overlap.type2 === "lec"
+                            ? 
+                            this.parsePeriod(this.state.courses[this.findIndex(overlap.courseId2)].lecTimes["spring"][overlap.index2], "Lecture")
+                            : 
+                            this.parsePeriod(this.state.courses[this.findIndex(overlap.courseId2)].discTimes["spring"][overlap.index2], "Disc.")}
                         </li>
                     ))}
                     </ul>
                 </div>
                 <button onClick={this.sampleDataLg} className="btn btn-primary m-right-sm">Populate Sample Data (Large)</button>
                 <button onClick={this.sampleDataSm} className="btn btn-primary m-right-sm">Populate Sample Data (Small)</button>
+                <button onClick={this.parseCourses} className="btn btn-primary m-right-sm">Parse Course Data</button>
                 <br />
                 <button onClick={this.computeAllOverlaps} 
                         className="btn btn-primary m-bottom-sm m-top-sm">Compute Course Overlaps</button>
