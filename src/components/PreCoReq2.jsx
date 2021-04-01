@@ -12,6 +12,38 @@ class PreCoReq2 extends Component {
         this.state = {courses: props.courses, titleMap: props.titleMap};
     };
 
+    ////////////////////////////
+    // Testing w/ Sample Data //
+    ////////////////////////////
+
+    sampleDataSm = () => {
+        this.setState({
+            currentId: 6,
+            courses: courses_sm,
+            tenMinGap: true,
+            maxFour: true,
+            balance: true
+        });
+
+        console.log('Sample Data Added (Small)');
+    };
+
+    sampleDataLg = () => {
+        this.setState({
+            currentId: 13,
+            courses: courses_lg,
+            tenMinGap: true,
+            maxFour: true,
+            balance: true
+        });
+
+        console.log('Sample Data Added (Large)');
+    };
+
+    ///////////////////////////
+    // End Testing Functions //
+    ///////////////////////////
+
     // Find course index in internal list, based on its Id number
     findIndex = (courseId) => {
         let courses = [...this.state.courses];
@@ -102,7 +134,10 @@ class PreCoReq2 extends Component {
                 </div>
                 ))}
 
-                
+                <br />
+                <button onClick={this.sampleDataLg} className="btn btn-primary m-right-sm">Populate Sample Data (Large)</button>
+                <button onClick={this.sampleDataSm} className="btn btn-primary m-right-sm">Populate Sample Data (Small)</button>
+                <br />
                 <button onClick={() => this.props.onTransition("input", this.state.courses)} 
                         className="btn btn-warning m-top m-bottom-sm">Return to Course Inputs</button>
                 <br />
@@ -111,6 +146,7 @@ class PreCoReq2 extends Component {
                 <br />
                 <button onClick={() => this.props.onTransition("output", this.state.courses)} 
                         className="btn btn-success">View Course Schedule(s)</button>
+
             </React.Fragment>
         );
     }

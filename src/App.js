@@ -9,10 +9,9 @@ import './App.css';
 
 class App extends Component {
   state = {
-    screen: "output",
+    screen: "preCoReq2",
     currentId: 1,
     courses: [],
-    coursesParsed: [],
     tenMinGap: true,
     maxFour: true,
     balance: false,
@@ -57,7 +56,6 @@ class App extends Component {
                         onTransition={this.handleMinorTransition} 
                         currentId={this.state.currentId} 
                         courses={this.state.courses} 
-                        coursesParsed={this.state.coursesParsed}
                         tenMinGap={this.state.tenMinGap}
                         maxFour={this.state.maxFour} 
                         balance={this.state.balance}

@@ -20,30 +20,6 @@ class Input extends Component {
         };
     };
 
-    ////////////////////////////
-    // Testing w/ Sample Data //
-    ////////////////////////////
-
-    sampleDataSm = () => {
-        this.setState({
-            currentId: 6,
-            courses: courses_sm,
-            tenMinGap: true,
-            maxFour: true,
-            balance: true
-        });
-    };
-
-    sampleDataLg = () => {
-        this.setState({
-            currentId: 13,
-            courses: courses_lg,
-            tenMinGap: true,
-            maxFour: true,
-            balance: true
-        });
-    };
-
     ////////////////////////////////
     // Universal Helper Functions //
     ////////////////////////////////
@@ -836,8 +812,6 @@ class Input extends Component {
           {/* Final Section: Add Courses, Specify Algorithm */}
           <button onClick={this.addCourse} className="btn btn-primary m-right-sm">Add Course</button>
           <button onClick={this.addSeries} className="btn btn-primary m-right-sm">Add Year-Long Series</button>
-          <button onClick={this.sampleDataLg} className="btn btn-primary m-right-sm">Populate Sample Data (Large)</button>
-          <button onClick={this.sampleDataSm} className="btn btn-primary m-right-sm">Populate Sample Data (Small)</button>
           <button onClick={this.clear} className="btn btn-danger m-right-sm">Clear Data</button>
           <button onClick={() => this.props.onTransition("preCoReq",
                                                         this.state.currentId, 
