@@ -74,16 +74,207 @@ class Output extends Component {
 
     // Main method that computes suggested course schedules per quarter
     buildSchedules = () => {
-        this.computeAllOverlaps();
-        this.computeConstraints();
+        // Parse course overlaps & other scheduling constraints
+        let overlaps = this.computeAllOverlaps();
+        let constraints = this.computeConstraints();
+        let [fallOverlaps, 
+            winterOverlaps, 
+            springOverlaps] = [overlaps['fallOverlaps'],
+                            overlaps['winterOverlaps'], 
+                            overlaps['springOverlaps']]
+        let [prefs, 
+            prereqs, 
+            coreqs, 
+            seqs] = [constraints['prefs'], 
+                    constraints['prereqs'], 
+                    constraints['coreqs'], 
+                    constraints['seqs']];
+
+        // Constraints related to year-long course sequences
+        let seqConstraints = [];
+        for (let i = 0; i < seqs.length; i++) {
+            let index = this.findIndex(seqs[i].courseId);
+            let val = seqs[i].seriesIndex;
+
+            seqConstraints.push({'index': index, 'val': val});
+        };
+ 
+        // Constraints related to prerequisites
+        let prereqConstraints = [];
+        for (let i = 0; i < prereqs.length; i++) {
+            let prereqList = prereqs[i];
+
+            if (prereqList.length !== 0) {
+                let courseIndex = this.findIndex(prereqList[0].courseId);
+                let prereqIds = prereqList[0].prereqIds;
+                
+                for (let j = 0; j < prereqIds.length; j++) {
+                    let prereqIndex = this.findIndex(prereqIds[j]);
+                    prereqConstraints.push({'courseIndex': courseIndex, 
+                                        'prereqIndex': prereqIndex});
+                }
+            }
+        };
+
+        // Constraints related to co-requisites
+        let coreqConstraints = [];
+        for (let i = 0; i < coreqs.length; i++) {
+            let coreqList = coreqs[i];
+
+            if (coreqList.length !== 0) {
+                let courseIndex = this.findIndex(coreqList[0].courseId);
+                let coreqIds = coreqList[0].coreqIds;
+                
+                for (let j = 0; j < coreqIds.length; j++) {
+                    let coreqIndex = this.findIndex(coreqIds[j]);
+                    coreqConstraints.push({'courseIndex': courseIndex, 
+                                        'coreqIndex': coreqIndex});
+                }
+            }
+        };
+
+        // Take all possible course schedules (permutations) ...
+        // ... and filter them based on these^^ constraints
+        let permutations = this.permute(this.state.courses.length, 3) 
+                                .filter(p => 
+                                    this.freqTest(p, 0, 5) 
+                                    && this.freqTest(p, 1, 5) 
+                                    && this.freqTest(p, 2, 5)
+                                    && this.seqTest(p, seqConstraints)
+                                    && this.prereqTest(p, prereqConstraints)
+                                    && this.coreqTest(p, coreqConstraints));
+        
+        // Filter down further if necessary
+        if (this.state.maxFour) {
+            permutations = permutations.filter(p => this.freqTest(p, 0, 4) 
+                                    && this.freqTest(p, 1, 4) 
+                                    && this.freqTest(p, 2, 4));
+        };
+
+        if (this.state.balance) {
+            permutations = permutations.filter(p => this.balanceTest(p, this.state.courses.length));
+        };
+
+        console.log(permutations);
 
         /* 
         Things to consider: 
-            -Series
+            -Series (DONE)
             -Preferences
-            -Availability (both lectures & discussion sections)
-            -Prereqs / coreqs
+            -Availability, both lectures & discussion
+            -Prereqs / coreqs (DONE)
         */
+    };
+
+
+    ////////////////////////////////////////////////
+    /// Helper Functions for Filtering Schedules ///
+    ////////////////////////////////////////////////
+
+
+    // Recursively generate all possible n-bit sequences, ...
+    // ... where each value is between 0 and 'limit'
+    permute = (n, limit) => {
+        let result = [];
+
+        if (n === 1) {
+            for (let i = 0; i < limit; i++) {
+                result.push([i]);
+            };
+        } else {
+            let prev = this.permute(n - 1, limit);
+
+            for (let i = 0; i < prev.length; i++) {
+                for (let j = 0; j < limit; j++) {
+                    let subResult = [...prev[i]];
+                    subResult.push(j);
+                    result.push(subResult);
+                }
+            };
+        }
+
+        return result;
+    };
+
+    // Ensure a balanced schedule (~ equal # of courses each quarter)
+    balanceTest = (arr, numCourses) => {
+        let numZeros = 0;
+        let numOnes = 0;
+        let numTwos = 0;
+
+        for (let i = 0; i < arr.length; i++) {
+            if (arr[i] === 0) {
+                numZeros = numZeros + 1;
+            } else if (arr[i] === 1) {
+                numOnes = numOnes + 1;
+            } else {
+                numTwos = numTwos + 1;
+            }
+        };
+
+        if (numCourses % 3 === 0) {
+            return (numZeros === numOnes) && (numOnes === numTwos);
+        } else {
+            return Math.abs(numZeros - numOnes) <= 1 
+                && Math.abs(numZeros - numTwos) <= 1 
+                && Math.abs(numOnes - numTwos) <= 1;
+        }
+    };
+
+    // Test that co-requisite requirements are met
+    coreqTest = (arr, coreqConstraints) => {
+        for (let i = 0; i < coreqConstraints.length; i++) {
+            let constraint = coreqConstraints[i];
+
+            if (arr[constraint.courseIndex] < arr[constraint.coreqIndex]) {
+                return false;
+            }
+        };
+
+        return true;
+    };
+
+    // Test that pre-requisite requirements are met
+    prereqTest = (arr, prereqConstraints) => {
+        for (let i = 0; i < prereqConstraints.length; i++) {
+            let constraint = prereqConstraints[i];
+
+            if (arr[constraint.courseIndex] <= arr[constraint.prereqIndex]) {
+                return false;
+            }
+        };
+
+        return true;
+    };
+
+    // Check that year-long sequences occur as needed
+    seqTest = (arr, seqConstraints) => {
+        for (let i = 0; i < seqConstraints.length; i++) {
+            let constraint = seqConstraints[i];
+
+            if (arr[constraint.index] !== constraint.val) {
+                return false;
+            }
+        };
+
+        return true;
+    }
+
+    // Check if a certain array element shows up too often
+    freqTest = (arr, target, limit) => {
+        let count = 0;
+
+        for (let i = 0; i < arr.length; i++) {
+            if (count > limit) {
+                return false;
+            } 
+
+            if (arr[i] === target) {
+                count = count + 1;
+            }
+        };
+
+        return count <= limit;
     };
 
 
@@ -138,12 +329,9 @@ class Output extends Component {
             };
         };
 
-        // Update internal state
-        console.log(fallOverlaps);
-        console.log(springOverlaps);
-        console.log(winterOverlaps);
-        console.log('Course Overlaps Computed^^');
+        // Update internal state & return course overlaps (b/c 'setState' is asynchronous)
         this.setState({ fallOverlaps, winterOverlaps, springOverlaps });
+        return {'fallOverlaps': fallOverlaps, 'winterOverlaps': winterOverlaps, 'springOverlaps': springOverlaps};
     };
 
     // Add each lecture & discussion section for every course as a distinct array entry
@@ -173,13 +361,8 @@ class Output extends Component {
             };
         };
 
-        // Update internal state
-        console.log(coursesParsed);
-        console.log('Courses Parsed^^');
+        // Update internal state & return parsed courses (b/c 'setState()' is asynchronous)
         this.setState({ coursesParsed });
-
-        // Return the list of parsed courses for use in 'computeAllOverlaps()'
-        // Cannot use internal state directly b/c 'setState()' is asynchronous
         return coursesParsed;
     };
 
@@ -194,11 +377,17 @@ class Output extends Component {
 
     // Determine course timing preferences, pre/co-reqs, year-long sequences
     computeConstraints = () => {
-        this.findPrefs();
-        this.findPrereqs();
-        this.findCoreqs();
-        this.findSeqs();
-        console.log('Prefs, Pre/Co-Reqs, Sequences Computed^^');
+        let prefs = this.findPrefs();
+        let prereqs = this.findPrereqs();
+        let coreqs = this.findCoreqs();
+        let seqs = this.findSeqs();
+
+        return {
+            'prefs': prefs, 
+            'prereqs': prereqs, 
+            'coreqs': coreqs, 
+            'seqs': seqs
+        };
     };
 
     // Determine all course timing preferences
@@ -220,8 +409,8 @@ class Output extends Component {
             }
         };
 
-        console.log(prefs);
         this.setState({ prefs });
+        return prefs;
     };
 
     // Determine all course prereqs
@@ -239,8 +428,8 @@ class Output extends Component {
             }
         };
 
-        console.log(prereqs);
         this.setState({ prereqs });
+        return prereqs;
     };
 
     // Determine all course co-reqs
@@ -258,8 +447,8 @@ class Output extends Component {
             }
         };
 
-        console.log(coreqs);
         this.setState({ coreqs });
+        return coreqs;
     };
 
     // Determine all year-long course sequences
@@ -277,8 +466,8 @@ class Output extends Component {
             }
         };
 
-        console.log(seqs);
         this.setState({ seqs });
+        return seqs;
     };
 
 

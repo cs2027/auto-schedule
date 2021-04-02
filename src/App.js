@@ -14,7 +14,7 @@ class App extends Component {
     courses: [],
     tenMinGap: true,
     maxFour: true,
-    balance: false,
+    balance: true,
     quarters: ["fall", "winter", "spring"],
     dows: ["M", "Tu", "W", "Th", "F"]
   }
