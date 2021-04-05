@@ -74,6 +74,7 @@ class Output extends Component {
 
     // Main method that computes suggested course schedules per quarter
     buildSchedules = () => {
+        
         // Parse course overlaps & other scheduling constraints
         let overlaps = this.computeAllOverlaps();
         let constraints = this.computeConstraints();
@@ -81,7 +82,7 @@ class Output extends Component {
             winterOverlaps, 
             springOverlaps] = [overlaps['fallOverlaps'],
                             overlaps['winterOverlaps'], 
-                            overlaps['springOverlaps']]
+                            overlaps['springOverlaps']];
         let [prefs, 
             prereqs, 
             coreqs, 
@@ -133,48 +134,269 @@ class Output extends Component {
             }
         };
 
+        // (Def. 1) Permutation = a mapping of courses to quarters
         // Take all possible course schedules (permutations) ...
-        // ... and filter them based on these^^ constraints
-        let permutations = this.permute(this.state.courses.length, 3) 
+        // ... and filter them based on multiple constraints 
+        let permutations = this.permuteCourses(this.state.courses.length, 3) // Def. 1 (see above)
                                 .filter(p => 
-                                    this.freqTest(p, 0, 5) 
+                                    this.freqTest(p, 0, 5) // <=5 courses/quarter
                                     && this.freqTest(p, 1, 5) 
                                     && this.freqTest(p, 2, 5)
-                                    && this.seqTest(p, seqConstraints)
-                                    && this.prereqTest(p, prereqConstraints)
-                                    && this.coreqTest(p, coreqConstraints));
+                                    && this.availableTest(p) // Check course is available in its assigned quarter
+                                    && this.seqTest(p, seqConstraints) // Year-long sequences
+                                    && this.prereqTest(p, prereqConstraints) // Pre-reqs
+                                    && this.coreqTest(p, coreqConstraints)); // Co-reqs
         
-        // Filter down further if necessary
-        if (this.state.maxFour) {
+        // Filter down further if necessary 
+        if (this.state.maxFour) { // Enforce max of 4 courses/quarter
             permutations = permutations.filter(p => this.freqTest(p, 0, 4) 
                                     && this.freqTest(p, 1, 4) 
                                     && this.freqTest(p, 2, 4));
         };
 
-        if (this.state.balance) {
+        if (this.state.balance) { // Enforce a balanced schedule (equal # of courses per quarter)
             permutations = permutations.filter(p => this.balanceTest(p, this.state.courses.length));
         };
 
-        console.log(permutations);
 
-        /* 
-        Things to consider: 
-            -Series (DONE)
-            -Preferences
-            -Availability, both lectures & discussion
-            -Prereqs / coreqs (DONE)
+        // Compute scores for each permutation, based on course timing prefs
+        let scores = this.computeScores(permutations);
+
+        /*
+        For each permutation, do the following:
+        (1) Determine the number of lecture & discussion sections for each course
+        (2) Compute all possible combinations of these^^ sections & filter based on 
+        if there are any time overlaps or not
+        (3) Add valid schedules to the final list, along with their score (see above)
         */
+        let schedulesFinal = [];
+        for (let i = 0; i < permutations.length; i++) {
+            let numSections = this.numSections(permutations[i]); // (1)
+
+            // Def. 2 (see below)
+            let schedules = this.computeSchedules(permutations[i], numSections, permutations[i].length - 1) // (2)
+                                .filter(schedule => this.validSchedule(schedule, overlaps));
+            
+            for (let j = 0; j < schedules.length; j++) {
+                schedulesFinal.push({'schedule': schedules[j], 'score': scores[i]}); // (3)
+            }
+        };
+
+        // (Def. 2) Schedule = a mapping of courses to quarters AND
+        // specific lecture & discussion section times
+
+        console.log(schedulesFinal);
     };
 
 
-    ////////////////////////////////////////////////
-    /// Helper Functions for Filtering Schedules ///
-    ////////////////////////////////////////////////
+    /////////////////////////////////////////////
+    /// Helpers for Computing Final Schedules ///
+    /////////////////////////////////////////////
 
+
+    // Determines if a given schedule^^ is valid or not
+    // ^^schedule = a mapping of courses to quarters, along with 
+    // specifying lecture & discussion sections
+    validSchedule = (schedule, overlaps) => {
+        let [fallOverlaps, 
+            winterOverlaps, 
+            springOverlaps] = [overlaps['fallOverlaps'],
+                            overlaps['winterOverlaps'], 
+                            overlaps['springOverlaps']];
+
+        for (let i = 0; i < schedule.length; i++) {
+            if (schedule[i].quarter === "fall") {
+                if (this.hasConflict(schedule, fallOverlaps[i], i, "fall")) {
+                    return false;
+                }
+            } else if (schedule[i].quarter === "winter") {
+                if (this.hasConflict(schedule, winterOverlaps[i], i, "winter")) {
+                    return false;
+                }
+            } if (schedule[i].quarter === "spring") {
+                if (this.hasConflict(schedule, springOverlaps[i], i, "spring")) {
+                    return false;
+                }
+            }
+        };
+
+        return true;
+    };
+
+    // Looks up any potential timing conflicts for a given schedule
+    hasConflict = (schedule, conflicts, currentIndex, quarter) => {
+        if (conflicts.length === 0) {
+            return false;
+        } else {
+            for (let j = 0; j < conflicts.length; j++) {
+                let courseIndex1 = this.findIndex(conflicts[j].courseId1);
+                let courseIndex2 = this.findIndex(conflicts[j].courseId2);
+                let courseIndex = -1;
+                let sectionType = "";
+                let sectionIndex = -1;
+
+                if (courseIndex1 === currentIndex) {
+                    courseIndex = courseIndex2;
+                    sectionType = conflicts[j].type2;
+                    sectionIndex = conflicts[j].index2;
+                } else {
+                    courseIndex = courseIndex1;
+                    sectionType = conflicts[j].type1;
+                    sectionIndex = conflicts[j].index1;
+                }
+
+                let otherSection = schedule[courseIndex];
+
+                if (otherSection.quarter === quarter) {
+                    if (sectionType === "lec" && otherSection.lecIndex === sectionIndex) {
+                        return true;
+                    } else if (sectionType === "disc" && otherSection.discIndex === sectionIndex) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // Based on the number of lecture & discussion section available for each course,
+    // recursively compute all possible combinations of different sections
+    computeSchedules = (permutation, numSections, index) => {
+        let result = [];
+        let quarter = numSections[index].quarter;
+        let numLec = numSections[index].numLec;
+        let numDisc = numSections[index].numDisc;
+
+        if (index === 0) {
+            if (numDisc === 0) {
+                for (let i = 0; i < numLec; i++) {
+                    result.push([{'quarter': quarter, 'lecIndex': i, 'discIndex': null}]);
+                };
+            } else {
+                for (let i = 0; i < numLec; i++) {
+                    for (let j = 0; j < numDisc; j++) {
+                        result.push([{'quarter': quarter, 'lecIndex': i, 'discIndex': j}]);
+                    }
+                };
+            }
+        } else {
+            let prev = this.computeSchedules(permutation, numSections, index - 1);
+            
+            for (let i = 0; i < prev.length; i++) {
+                if (numDisc === 0) {
+                    for (let j = 0; j < numLec; j++) {
+                        let subResult = [...prev[i]];
+                        subResult.push({'quarter': quarter, 'lecIndex': j, 'discIndex': null});
+                        result.push(subResult);
+                    };
+                } else {
+                    for (let j = 0; j < numLec; j++) {
+                        for (let k = 0; k < numDisc; k++) {
+                            let subResult = [...prev[i]];
+                            subResult.push({'quarter': quarter, 'lecIndex': j, 'discIndex': k});
+                            result.push(subResult);
+                        }
+                    };
+                }
+            };
+        }
+
+        return result;
+    };
+    
+    // Determine the number of lecture & discussion sections 
+    // for each course in a given permutation
+    numSections = (permutation) => {
+        let result = [];
+        let courses = [...this.state.courses];
+
+        for (let i = 0; i < permutation.length; i++) {
+            if (permutation[i] === 0) {
+                let quarter = 'fall';
+                let numLec = courses[i].lecTimes['fall'].length;
+                let numDisc = 0;
+
+                if (courses[i].disc['fall']) {
+                    if (! (courses[i].discTimes['fall'][0].start[0] === -1)) {
+                        numDisc = courses[i].discTimes['fall'].length;
+                    };
+                };
+
+                result.push({'quarter': quarter, 'numLec': numLec, 'numDisc': numDisc});
+            } else if (permutation[i] === 1) {
+                let quarter = 'winter';
+                let numLec = courses[i].lecTimes['winter'].length;
+                let numDisc = 0;
+
+                if (courses[i].disc['winter']) {
+                    if (! (courses[i].discTimes['winter'][0].start[0] === -1)) {
+                        numDisc = courses[i].discTimes['winter'].length;
+                    };
+                };
+
+                result.push({'quarter': quarter, 'numLec': numLec, 'numDisc': numDisc});
+            } else {
+                let quarter = 'spring';
+                let numLec = courses[i].lecTimes['spring'].length;
+                let numDisc = 0;
+
+                if (courses[i].disc['spring']) {
+                    if (! (courses[i].discTimes['spring'][0].start[0] === -1)) {
+                        numDisc = courses[i].discTimes['spring'].length;
+                    };
+                };
+
+                result.push({'quarter': quarter, 'numLec': numLec, 'numDisc': numDisc});
+            }
+        };
+
+        return result;
+    };
+
+    // Compute scores for a given preference, based on course timing preferences
+    computeScores = (permutations) => {
+        let courses = [...this.state.courses];
+        let numCourses = courses.length;
+        let numPerms = permutations.length;
+
+        let scores = new Array(numPerms);
+        for (let i = 0; i < numPerms; i++) {
+            let currentScore = 0;
+            let perm = permutations[i];
+
+            for (let j = 0; j < numCourses; j++) {
+                if (courses[j].pref === "") {
+                    continue;
+                } else if (perm[j] === 0 && courses[j].pref === "fall") {
+                    currentScore = currentScore + 1;
+                } else if (perm[j] === 1 && courses[j].pref === "winter") {
+                    currentScore = currentScore + 1;
+                } else if (perm[j] === 2 && courses[j].pref === "spring") {
+                    currentScore = currentScore + 1;
+                } else {
+                    continue;
+                }
+            };
+
+            scores[i] = currentScore;
+        };
+
+        return scores;
+    };
+
+
+    ////////////////////////////////////////////
+    /// Helpers for Filtering Permutations^^ ///
+    ////////////////////////////////////////////
+
+
+    // ^^ permutation = a mapping of courses to quarters,
+    // w/o considering specific lecture & discussion sections
 
     // Recursively generate all possible n-bit sequences, ...
     // ... where each value is between 0 and 'limit'
-    permute = (n, limit) => {
+    permuteCourses = (n, limit) => {
         let result = [];
 
         if (n === 1) {
@@ -182,7 +404,7 @@ class Output extends Component {
                 result.push([i]);
             };
         } else {
-            let prev = this.permute(n - 1, limit);
+            let prev = this.permuteCourses(n - 1, limit);
 
             for (let i = 0; i < prev.length; i++) {
                 for (let j = 0; j < limit; j++) {
@@ -194,6 +416,31 @@ class Output extends Component {
         }
 
         return result;
+    };
+
+
+    // Ensure that courses are available for a given permutation,
+    // i.e. a 'fall' course is actually available in the fall
+    availableTest = (arr) => {
+        let courses = [...this.state.courses];
+
+        for (let i = 0; i < arr.length; i++) {
+            if (arr[i] === 0) {
+                if (! (courses[i].available['fall'])) {
+                    return false;
+                }
+            } else if (arr[i] === 1) {
+                if (! (courses[i].available['winter'])) {
+                    return false;
+                }
+            } else {
+                if (! (courses[i].available['spring'])) {
+                    return false;
+                }
+            }
+        };
+
+        return true;
     };
 
     // Ensure a balanced schedule (~ equal # of courses each quarter)

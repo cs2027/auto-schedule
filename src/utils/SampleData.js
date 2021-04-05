@@ -85,7 +85,7 @@ export const courses_sm = [
     series: false,
     seriesIndex: 0, 
     unique: false,
-    pref: "",
+    pref: "spring",
     prereqs: null,
     coreqs: null
   },
@@ -208,7 +208,7 @@ export const courses_lg = [
     series: false,
     seriesIndex: 0, 
     unique: false,
-    pref: "",
+    pref: "winter",
     prereqs: null,
     coreqs: null
   },
@@ -268,7 +268,7 @@ export const courses_lg = [
     series: false,
     seriesIndex: 0, 
     unique: false,
-    pref: "",
+    pref: "fall",
     prereqs: null,
     coreqs: null
   },
@@ -298,7 +298,7 @@ export const courses_lg = [
     series: false,
     seriesIndex: 0, 
     unique: false,
-    pref: "",
+    pref: "spring",
     prereqs: null,
     coreqs: null
   },
@@ -421,7 +421,9 @@ export const courses_lg = [
     pref: "",
     prereqs: null,
     coreqs: null
-  },
+  }
+  /*
+  ,
   {
     id: 10,  
     title: "Math 310-1",
@@ -518,4 +520,5 @@ export const courses_lg = [
     prereqs: null,
     coreqs: null
   } 
+  */
 ];
