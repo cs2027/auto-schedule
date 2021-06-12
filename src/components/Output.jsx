@@ -23,7 +23,8 @@ class Output extends Component {
         };
 
         this.state = {
-            schedule: [], // Recommended course schedules based on user inputs
+            schedulesFinal: [], // Recommended course schedules based on user inputs
+            inProgress: true, // Whether or not schedules are still being computed
             currentId: props.currentId,
             courses: props.courses,
             tenMinGap: props.tenMinGap,
@@ -167,27 +168,115 @@ class Output extends Component {
         (1) Determine the number of lecture & discussion sections for each course
         (2) Compute all possible combinations of these^^ sections & filter based on 
         if there are any time overlaps or not
-        (3) Add valid schedules to the final list, along with their score (see above)
+        (3) Add valid schedules to the unparsed list, along with their score (see above)
         */
-        let schedulesFinal = [];
+        let schedulesUnparsed = [];
         for (let i = 0; i < permutations.length; i++) {
             let numSections = this.numSections(permutations[i]); // (1)
 
-            // Def. 2 (see below)
+            // (2)
             let schedules = this.computeSchedules(permutations[i], numSections, permutations[i].length - 1) // (2)
                                 .filter(schedule => this.validSchedule(schedule, overlaps));
             
             for (let j = 0; j < schedules.length; j++) {
-                schedulesFinal.push({'schedule': schedules[j], 'score': scores[i]}); // (3)
+                schedulesUnparsed.push({'schedule': schedules[j], 'score': scores[i]}); // (3)
             }
         };
 
-        // (Def. 2) Schedule = a mapping of courses to quarters AND
-        // specific lecture & discussion section times
+        // Sort the schedules in descending score order + only keep best 5 scores
+        schedulesUnparsed.sort(function(s1, s2) { return s2.score - s1.score; });
+        if (schedulesUnparsed.length > 5) {
+            schedulesUnparsed = schedulesUnparsed.slice(0, 5);
+        }
 
-        console.log(schedulesFinal);
+        /*
+         `schedulesFinal` will be a list of parsed schedules, where each schedule
+         is of the following form:
+            {
+                "fall": {
+                    "CS 336": {...},
+                    "CS 348": {...}
+                }, 
+                "winter": {
+                    "CS 321": {...},
+                    "CS 308": {...}
+                },
+                "spring": {
+                    "CS 339": {...},
+                    "CS 337"
+                }
+            }
+        */
+
+        let schedulesFinal = [];
+
+        // Loop over each unparsed schedule...
+        for (let i = 0; i < schedulesUnparsed.length; i++) {
+            let scheduleFinal = {
+                "fall": {},
+                "winter": {},
+                "spring": {}
+            }
+            let scheduleUnparsed = schedulesUnparsed[i].schedule;
+
+            /*
+                For each unparsed schedule, access all of its course mapping
+                i.e. take "CS 336" in the fall, "CS 321" in the winter, etc.)
+                and do the following...
+                    (1) Obtain the relevant course data from the state `courses` variable
+                    (2) Determine the lecture & disc. times and dates based on the schedule
+                    (3) Create a parsed schedule of the aforementioned form
+                    (4) Add it to the `schedulesFinal` variable
+            */
+            for (let j = 0; j < scheduleUnparsed.length; j++) {
+                
+                // (1)
+                let courseSchedule = scheduleUnparsed[j];
+                let courseData = this.state.courses[j];
+                let quarter = courseSchedule.quarter;
+                let lecIndex = courseSchedule.lecIndex;
+                let discIndex = courseSchedule.discIndex;
+                let title = courseData.title;
+
+                let courseScheduleFinal = {};
+                let courseLecData = courseData["lecTimes"][quarter];
+                let courseDiscData = courseData["discTimes"][quarter];
+
+                // (2)
+                if (lecIndex != null) {
+                    courseScheduleFinal["lecDow"] = courseLecData[lecIndex]["dow"];
+                    courseScheduleFinal["lecStart"] = courseLecData[lecIndex]["start"];
+                    courseScheduleFinal["lecEnd"] = courseLecData[lecIndex]["end"];
+                } else {
+                    courseScheduleFinal["lecDow"] = null;
+                    courseScheduleFinal["lecStart"] = null;
+                    courseScheduleFinal["lecEnd"] = null;
+                }
+
+                if (discIndex != null) {
+                    courseScheduleFinal["discDow"] = courseDiscData[discIndex]["dow"];
+                    courseScheduleFinal["discStart"] = courseDiscData[discIndex]["start"];
+                    courseScheduleFinal["discEnd"] = courseDiscData[discIndex]["end"];
+                } else {
+                    courseScheduleFinal["discDow"] = null;
+                    courseScheduleFinal["discStart"] = null;
+                    courseScheduleFinal["discEnd"] = null;
+                }
+
+                // (3)
+                scheduleFinal[quarter][title] = courseScheduleFinal;
+            }
+
+            // (4)
+            schedulesFinal.push(scheduleFinal);
+        }
+
+        // TODO: currently not working
+        // Attempt to update state variable s/t schedules render on screen
+        this.setState({ schedulesFinal });
+        console.log("schedulesFinal: ", schedulesFinal);
+        console.log("schedulesFinal: ", this.state.schedulesFinal);
     };
-
 
     /////////////////////////////////////////////
     /// Helpers for Computing Final Schedules ///
@@ -811,10 +900,19 @@ class Output extends Component {
     /// Render method ///
     /////////////////////
 
-
     render() { 
+        console.log("inside render")
+        console.log("winterOverlaps: ", this.state.coursesParsed);
+        console.log("schedulesFinal: ", this.state.schedulesFinal);
+
         return (  
             <React.Fragment>
+                {/*  */}
+                {this.state.schedulesFinal.map((schedule) => ( 
+                    <>
+                    <h5>Hello world</h5>
+                    </>
+                ))}
                 <button onClick={() => this.props.onTransition("input", this.state.courses)} 
                         className="btn btn-warning m-bottom-sm m-top-sm">Edit Original Courses</button>
                 <br />
