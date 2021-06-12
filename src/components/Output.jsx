@@ -41,9 +41,14 @@ class Output extends Component {
             coreqs: arr(numCourses),  
             seqs: [] // Year-long sequences
         };
-
-        this.buildSchedules();
     };
+
+    // TODO
+    componentDidMount() {
+        let schedulesFinal = this.buildSchedules();
+        this.setState({ schedulesFinal });
+        this.forceUpdate();
+    }
 
     /*
     (1) Parsed courses are of the following form:
@@ -273,9 +278,7 @@ class Output extends Component {
 
         // TODO: currently not working
         // Attempt to update state variable s/t schedules render on screen
-        this.setState({ schedulesFinal });
-        console.log("schedulesFinal: ", schedulesFinal);
-        console.log("schedulesFinal: ", this.state.schedulesFinal);
+        return schedulesFinal;
     };
 
     /////////////////////////////////////////////
@@ -896,22 +899,146 @@ class Output extends Component {
     };
 
 
+    /////////////////////////////////////////////////
+    /// Helpers for rendering schedules on screen ///
+    ////////////////////////////////////////////////
+
+    // Parse course schedule data for one quarter (fall, winter, spring)
+    parseQuarterCourses = (courseData) => {
+        let coursesParsed = [];
+
+        for (const [key, value] of Object.entries(courseData)) {
+            let courseDetails = ["", "", ""];
+            courseDetails[0] += key;
+
+            if (value["lecStart"] != null) {
+                courseDetails[1] += "Lecture = ";
+                courseDetails[1] += `${value["lecStart"][0]}:`;
+
+                value["lecStart"][1] < 10 ? 
+                courseDetails[1] += `0${value["lecStart"][1]}` 
+                : courseDetails[1] += `${value["lecStart"][1]}`;
+
+                value["lecStart"][2] === 0? courseDetails[1] += "AM" : courseDetails[1] += "PM";
+                courseDetails[1] += " to ";
+                courseDetails[1] += `${value["lecEnd"][0]}:`;
+
+                value["lecEnd"][1] < 10 ? 
+                courseDetails[1] += `0${value["lecEnd"][1]}` 
+                : courseDetails[1] += `${value["lecEnd"][1]}`;
+
+                value["lecEnd"][2] === 0? courseDetails[1] += "AM" : courseDetails[1] += "PM";
+                courseDetails[1] += ", ";
+                
+                if (value["lecDow"][0] === 1) {
+                    courseDetails[1] += "M"
+                } 
+                
+                if (value["lecDow"][1] === 1) {
+                    courseDetails[1] += "Tu"
+                } 
+                
+                if (value["lecDow"][2] === 1) {
+                    courseDetails[1] += "W"
+                } 
+                
+                if (value["lecDow"][3] === 1) {
+                    courseDetails[1] += "Th"
+                }
+                
+                if (value["lecDow"][4] === 1) {
+                    courseDetails[1] += "F"
+                }
+            }
+
+            if (value["discStart"] != null) {
+                courseDetails[2] += "Discussion = ";
+                courseDetails[2] += `${value["discStart"][0]}:`;
+
+                value["discStart"][1] < 10 
+                ? courseDetails[2] += `0${value["discStart"][1]}` 
+                : courseDetails[2] += `${value["discStart"][1]}`;
+
+                value["discStart"][2] === 0? courseDetails[2] += "AM" : courseDetails[2] += "PM";
+                courseDetails[2] += " to ";
+                courseDetails[2] += `${value["discEnd"][0]}:`;
+
+                value["discEnd"][1] < 10 ? 
+                courseDetails[2] += `0${value["discEnd"][1]}` 
+                : courseDetails[2] += `${value["discEnd"][1]}`;
+
+                value["discEnd"][2] === 0? courseDetails[2] += "AM" : courseDetails[2] += "PM";
+                courseDetails[2] += ", ";
+                
+                if (value["discDow"][0] === 1) {
+                    courseDetails[2] += "M"
+                } 
+                
+                if (value["discDow"][1] === 1) {
+                    courseDetails[2] += "Tu"
+                } 
+                
+                if (value["discDow"][2] === 1) {
+                    courseDetails[2] += "W"
+                } 
+                
+                if (value["discDow"][3] === 1) {
+                    courseDetails[2] += "Th"
+                } 
+                
+                if (value["discDow"][4] === 1) {
+                    courseDetails[2] += "F"
+                }
+            }
+
+            coursesParsed.push(courseDetails);
+        }
+
+        return coursesParsed
+    }
+
+     // Capitalizes a word (1st letter becomes uppercase)
+     capitalize = (str) => {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+      };
+
     /////////////////////
     /// Render method ///
     /////////////////////
 
     render() { 
-        console.log("inside render")
-        console.log("winterOverlaps: ", this.state.coursesParsed);
-        console.log("schedulesFinal: ", this.state.schedulesFinal);
-
         return (  
             <React.Fragment>
-                {/*  */}
-                {this.state.schedulesFinal.map((schedule) => ( 
-                    <>
-                    <h5>Hello world</h5>
-                    </>
+                {this.state.schedulesFinal.map((schedule, scheduleIndex) => ( 
+                    <React.Fragment>
+                    <div key={scheduleIndex} className="form-row">
+                        {this.state.quarters.map((quarter, qIndex) => (
+                            <div key={qIndex} className="form-group col-md-4">
+                                <h4>{this.capitalize(quarter)}</h4>
+                                {this.parseQuarterCourses(schedule[quarter]).map((course, courseIndex) => (
+                                    <ul>
+                                        <li>{course[0]}</li>
+                                        <ul>
+                                            {course[1] !== "" 
+                                            ?
+                                            <li>{course[1]}</li>
+                                            :
+                                            <li>No lecture</li>
+                                            }
+                                            {course[2] !== "" 
+                                            ?
+                                            <li>{course[2]}</li>
+                                            :
+                                            <li>No discussion</li>
+                                            }
+                                        </ul>
+                                    </ul>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                    <hr className="hr" />
+                    </React.Fragment>
                 ))}
                 <button onClick={() => this.props.onTransition("input", this.state.courses)} 
                         className="btn btn-warning m-bottom-sm m-top-sm">Edit Original Courses</button>
