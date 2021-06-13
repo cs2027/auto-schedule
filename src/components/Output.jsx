@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { courses_sm, courses_lg } from '../utils/SampleData';
 import 'bootstrap/dist/css/bootstrap.css';
 import '../App.css';
+import { capitalize, orderCourses, ltTime, tenMinGap, timeToNum } from '../Globals';
 
 // Displays suggested course schedule(s)
 class Output extends Component {
@@ -43,7 +44,7 @@ class Output extends Component {
         };
     };
 
-    // TODO
+    // Forcefully update the `schedulesFinal` state variable + re-render screen
     componentDidMount() {
         let schedulesFinal = this.buildSchedules();
         this.setState({ schedulesFinal });
@@ -276,8 +277,6 @@ class Output extends Component {
             schedulesFinal.push(scheduleFinal);
         }
 
-        // TODO: currently not working
-        // Attempt to update state variable s/t schedules render on screen
         return schedulesFinal;
     };
 
@@ -836,18 +835,18 @@ class Output extends Component {
 
     // Determine if there is an overlap between two class periods
     periodOverlap = (period1, period2) => {
-        let tenMinGap = this.state.tenMinGap;
+        let tenMinGapState = this.state.tenMinGap;
 
-        if (tenMinGap) {
-            if (this.tenMinGap(period1.end, period2.start) ||
-                this.tenMinGap(period2.end, period1.start)) {
+        if (tenMinGapState) {
+            if (tenMinGap(period1.end, period2.start) ||
+                tenMinGap(period2.end, period1.start)) {
                 return false;
             } else {
                 return true;
             }
         } else {
-            if (this.ltTime(period1.end, period2.start) ||
-                this.ltTime(period2.end, period1.start)) {
+            if (ltTime(period1.end, period2.start) ||
+                ltTime(period2.end, period1.start)) {
                     return false;
                 } else {
                     return true;
@@ -869,33 +868,6 @@ class Output extends Component {
     // Look up information about a specific lecture/discussion section
     findPeriod = (courseId, quarter, type, index) => {
         return this.state.courses[this.findIndex(courseId)][type === "lec" ? "lecTimes" : "discTimes"][quarter][index];
-    };
-
-    // Determine if 'time1' comes before 'time2'
-    ltTime = (time1, time2) => {
-        return this.timeToNum(time2) >= this.timeToNum(time1);
-    };
-
-    // Determine if there are at least 10 mins between 'time1' and 'time2'
-    tenMinGap = (time1, time2) => {
-        return this.timeToNum(time2) - this.timeToNum(time1) >= 10;
-    };
-
-    // Convert a time object to a numerical value (# of mins past midnight)
-    timeToNum = (time) => {
-        if (time[2] === 0) {
-            if (time[0] !== 12) {
-                return time[0] * 60 + time[1];
-            } else {
-                return time[1];
-            }
-        } else {
-            if (time[0] !== 12) {
-                return time[0] * 60 + time[1] + 720;
-            } else {
-                return time[1] + 720;
-            }
-        }
     };
 
 
@@ -994,13 +966,12 @@ class Output extends Component {
             coursesParsed.push(courseDetails);
         }
 
+        // Sort courses from earliest to latest (both time and day of week)
+        coursesParsed.sort(function(course1, course2) { 
+            return orderCourses(course1, course2) 
+        });
         return coursesParsed
     }
-
-     // Capitalizes a word (1st letter becomes uppercase)
-     capitalize = (str) => {
-        return str.charAt(0).toUpperCase() + str.slice(1);
-      };
 
     /////////////////////
     /// Render method ///
@@ -1014,7 +985,7 @@ class Output extends Component {
                     <div key={scheduleIndex} className="form-row">
                         {this.state.quarters.map((quarter, qIndex) => (
                             <div key={qIndex} className="form-group col-md-4">
-                                <h4>{this.capitalize(quarter)}</h4>
+                                <h4>{capitalize(quarter)}</h4>
                                 {this.parseQuarterCourses(schedule[quarter]).map((course, courseIndex) => (
                                     <ul>
                                         <li>{course[0]}</li>

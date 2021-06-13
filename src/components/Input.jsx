@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { courses_sm, courses_lg } from '../utils/SampleData';
 import 'bootstrap/dist/css/bootstrap.css';
 import '../App.css';
+import { capitalize } from '../Globals';
 
 // Input data regarding classes over all 3 quarters
 class Input extends Component {
@@ -33,11 +34,6 @@ class Input extends Component {
           return i;
         };
       };
-    };
-  
-    // Capitalizes a word (1st letter becomes uppercase)
-    capitalize = (str) => {
-      return str.charAt(0).toUpperCase() + str.slice(1);
     };
   
     //////////////////////////
@@ -465,7 +461,7 @@ class Input extends Component {
                   {/* Course Title */}
                   <h4>Course Title: {course.title}</h4>
                   <h4 hidden={!(course.series)}>
-                    (Year-Long Series: {this.capitalize(this.state.quarters[course.seriesIndex])})
+                    (Year-Long Series: {capitalize(this.state.quarters[course.seriesIndex])})
                   </h4>
                   <div className="input-group m-bottom">
                     <input 
@@ -491,7 +487,7 @@ class Input extends Component {
                         <option value="">No Preference</option>
                         {this.state.quarters.filter(quarter => course.available[quarter]).map((quarter) => (
                         <React.Fragment>
-                          <option value={quarter}>{this.capitalize(quarter)}</option>
+                          <option value={quarter}>{capitalize(quarter)}</option>
                         </React.Fragment>
                         ))}
                       </select>
@@ -505,7 +501,7 @@ class Input extends Component {
                 {/* Quarters (Fa, Wi, Sp) */}
                 {this.state.quarters.map((quarter, qIndex) => (
                   <div key={qIndex} className="form-group col-md-3">
-                    <h4>{this.capitalize(quarter)}</h4>
+                    <h4>{capitalize(quarter)}</h4>
                     <div className="form-check">
                       <input 
                         onChange={() => this.changeAvail(course.id, quarter)}

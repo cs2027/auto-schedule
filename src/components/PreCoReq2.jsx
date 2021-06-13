@@ -24,8 +24,6 @@ class PreCoReq2 extends Component {
             maxFour: true,
             balance: true
         });
-
-        console.log('Sample Data Added (Small)');
     };
 
     sampleDataLg = () => {
@@ -36,8 +34,6 @@ class PreCoReq2 extends Component {
             maxFour: true,
             balance: true
         });
-
-        console.log('Sample Data Added (Large)');
     };
 
     ///////////////////////////
