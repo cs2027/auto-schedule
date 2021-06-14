@@ -1,9 +1,9 @@
 // import logo from './logo.svg';
 import React, { Component } from 'react';
-import Input from './components/Input';
-import PreCoReq from './components/PreCoReq';
-import PreCoReq2 from './components/PreCoReq2';
-import Output from './components/Output';
+import Input from './screens/Input';
+import PreCoReq from './screens/PreCoReq';
+import PreCoReq2 from './screens/PreCoReq2';
+import Output from './screens/Output';
 import 'bootstrap/dist/css/bootstrap.css';
 import './App.css';
 

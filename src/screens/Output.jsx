@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
-import { courses_sm, courses_lg } from '../utils/SampleData';
 import 'bootstrap/dist/css/bootstrap.css';
 import '../App.css';
-import { capitalize, orderCourses, ltTime, tenMinGap, timeToNum } from '../Globals';
+import { capitalize, orderCourses, ltTime, tenMinGap } from '../Globals';
 
 // Displays suggested course schedule(s)
 class Output extends Component {
@@ -25,7 +24,7 @@ class Output extends Component {
 
         this.state = {
             schedulesFinal: [], // Recommended course schedules based on user inputs
-            inProgress: true, // Whether or not schedules are still being computed
+            totalSchedules: -1, // Number of total possible schedules
             currentId: props.currentId,
             courses: props.courses,
             tenMinGap: props.tenMinGap,
@@ -46,8 +45,9 @@ class Output extends Component {
 
     // Forcefully update the `schedulesFinal` state variable + re-render screen
     componentDidMount() {
-        let schedulesFinal = this.buildSchedules();
-        this.setState({ schedulesFinal });
+        let result = this.buildSchedules();
+        this.setState({ totalSchedules: result["totalSchedules"]});
+        this.setState({ schedulesFinal: result["schedulesFinal"]});
         this.forceUpdate();
     }
 
@@ -85,16 +85,9 @@ class Output extends Component {
         // Parse course overlaps & other scheduling constraints
         let overlaps = this.computeAllOverlaps();
         let constraints = this.computeConstraints();
-        let [fallOverlaps, 
-            winterOverlaps, 
-            springOverlaps] = [overlaps['fallOverlaps'],
-                            overlaps['winterOverlaps'], 
-                            overlaps['springOverlaps']];
-        let [prefs, 
-            prereqs, 
+        let [prereqs, 
             coreqs, 
-            seqs] = [constraints['prefs'], 
-                    constraints['prereqs'], 
+            seqs] = [constraints['prereqs'], 
                     constraints['coreqs'], 
                     constraints['seqs']];
 
@@ -170,11 +163,11 @@ class Output extends Component {
         let scores = this.computeScores(permutations);
 
         /*
-        For each permutation, do the following:
-        (1) Determine the number of lecture & discussion sections for each course
-        (2) Compute all possible combinations of these^^ sections & filter based on 
-        if there are any time overlaps or not
-        (3) Add valid schedules to the unparsed list, along with their score (see above)
+            For each permutation, do the following:
+            (1) Determine the number of lecture & discussion sections for each course
+            (2) Compute all possible combinations of these^^ sections & filter based on 
+            if there are any time overlaps or not
+            (3) Add valid schedules to the unparsed list, along with their score (see above)
         */
         let schedulesUnparsed = [];
         for (let i = 0; i < permutations.length; i++) {
@@ -189,10 +182,16 @@ class Output extends Component {
             }
         };
 
-        // Sort the schedules in descending score order + only keep best 5 scores
-        schedulesUnparsed.sort(function(s1, s2) { return s2.score - s1.score; });
+        /*
+            (1) Store the total number of possible schedules
+            (2) Sort the schedules in descending score order
+            (3) Only keep the 5 best schedules (by score)
+        */
+        let totalSchedules = schedulesUnparsed.length; // (1)
+        schedulesUnparsed.sort(function(s1, s2) { return s2.score - s1.score; }); // (2)
+
         if (schedulesUnparsed.length > 5) {
-            schedulesUnparsed = schedulesUnparsed.slice(0, 5);
+            schedulesUnparsed = schedulesUnparsed.slice(0, 5); // (3)
         }
 
         /*
@@ -277,7 +276,10 @@ class Output extends Component {
             schedulesFinal.push(scheduleFinal);
         }
 
-        return schedulesFinal;
+        return {
+            "totalSchedules": totalSchedules,
+            "schedulesFinal": schedulesFinal
+        }
     };
 
     /////////////////////////////////////////////
@@ -980,6 +982,36 @@ class Output extends Component {
     render() { 
         return (  
             <React.Fragment>
+                {this.state.totalSchedules >= 10
+                ?
+                <>
+                <h4>
+                    We've only limited to show 5 of your best schedules, 
+                    but you actually had {this.state.totalSchedules} possible schedules. 
+                    Maybe on the course inputs, you should specify some more preferences
+                    (ex. I want to take "CS 336" in the fall, "Math 240" in the spring, etc.)
+                    or even considering adding some more courses/restrictions.
+                </h4>
+                <hr className="hr" />
+                </>
+                :
+                this.state.totalSchedules === 0
+                ?
+                <>
+                <h4>
+                    So unfortunately, we were not able to find any schedules that fit all
+                    of your requirements. When you initially input the your courses, consider taking some
+                    courses away or loosening some restrictions (ex. "balance my schedule", 
+                    "max 4 courses per quarter").
+                </h4>
+                <hr className="hr" />
+                </>
+                :
+                <>
+                <h3><u>Schedules (Up to 5 of Your Best Ones)</u></h3>
+                <br></br>
+                </>
+                }
                 {this.state.schedulesFinal.map((schedule, scheduleIndex) => ( 
                     <React.Fragment>
                     <div key={scheduleIndex} className="form-row">
@@ -994,13 +1026,13 @@ class Output extends Component {
                                             ?
                                             <li>{course[1]}</li>
                                             :
-                                            <li>No lecture</li>
+                                            <li>No Lecture</li>
                                             }
                                             {course[2] !== "" 
                                             ?
                                             <li>{course[2]}</li>
                                             :
-                                            <li>No discussion</li>
+                                            <li>No Discussion</li>
                                             }
                                         </ul>
                                     </ul>

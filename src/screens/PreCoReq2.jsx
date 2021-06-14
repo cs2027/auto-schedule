@@ -81,6 +81,53 @@ class PreCoReq2 extends Component {
         this.setState({ courses });
     };
 
+
+    ///////////////////////////////////////////////
+    /// Error catching before viewing schedules ///
+    ///////////////////////////////////////////////
+
+
+    // Make sure that a course is not a prereq and coreq
+    // ex. CS 348 can be either a prereq OR a coreq for CS 349, but not both
+    catchInputErrors = () => {
+        let errorMsg = "Error: a course cannot have the same course as a prereq & coreq.";
+        errorMsg += " Currently, the following courses violate this rule:";
+        let numErrors = 0;
+
+        for (let i = 0; i < this.state.courses.length; i++) {
+            let course = this.state.courses[i];
+
+            if (course["coreqs"] === null || course["prereqs"] === null) {
+                continue;
+            } else {
+                if (course["coreqs"]
+                    .some(courseId => course["prereqs"].includes(courseId))) {
+                    if (numErrors === 0) {
+                        errorMsg += ` ${course.title}`;
+                    } else {
+                        errorMsg += `, ${course.title}`;
+                    }
+
+                    numErrors += 1;
+                }
+            }
+        }
+
+        errorMsg += ".";
+        if (numErrors > 0) {
+            alert(errorMsg);
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /////////////////////////
+    /// `render()` method ///
+    /////////////////////////
+
+
     render() { 
         return (  
             <React.Fragment>
@@ -140,8 +187,14 @@ class PreCoReq2 extends Component {
                 <button onClick={() => this.props.onTransition("preCoReq", this.state.courses)} 
                         className="btn btn-warning m-bottom-sm">Edit Pre/Co-Requisite List</button>
                 <br />
-                <button onClick={() => this.props.onTransition("output", this.state.courses)} 
-                        className="btn btn-success">View Course Schedule(s)</button>
+                <button 
+                    onClick={() => {
+                        if (!this.catchInputErrors()) {
+                            this.props.onTransition("output", this.state.courses);
+                        }
+                    }} 
+                    className="btn btn-success">View Course Schedule(s)
+                </button>
 
             </React.Fragment>
         );

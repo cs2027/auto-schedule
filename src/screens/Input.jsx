@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
-import { courses_sm, courses_lg } from '../utils/SampleData';
 import 'bootstrap/dist/css/bootstrap.css';
 import '../App.css';
-import { capitalize } from '../Globals';
+import { capitalize, timeToNum } from '../Globals';
 
 // Input data regarding classes over all 3 quarters
 class Input extends Component {
@@ -444,10 +443,130 @@ class Input extends Component {
   
       this.setState({ courses });
     };
-  
+
+
+    ////////////////////////////////////////
+    /// Error catching for course inputs ///
+    ////////////////////////////////////////
+
+
+    // Catch course input errors before navigating to the next page
+    catchInputErrors = () => {
+
+      /*
+        Check for the following errors:
+          (1) User has entered at least one course
+          (2) + (3) User has not entered too many courses
+          (4) User has entered valid data for discussion & lecture times
+      */
+      if (this.state.courses.length === 0) {  // (1)
+        alert("You cannot continue until you enter at least one course.");
+        return true;
+      } else if (this.state.maxFour && this.state.courses.length > 12) {  // (2)
+        alert("You have entered over 12 courses, so we cannot enforce a maximum of 4 courses per quarter.");
+        return true;
+      } else if (this.state.courses.length > 15) {  // (3)
+        let errorMsg = "Looks like you're an ambitious person (or don't know how to use this website)";
+        errorMsg += ", but we're not going to let you enter over 15 courses.";
+        alert(errorMsg);
+        return true;
+      } else {  // (4)
+        let errorCourses = [];
+
+        for (let i = 0; i < this.state.courses.length; i++) {
+          let course = this.state.courses[i];
+
+          for (let j = 0; j < this.state.quarters.length; j++) {
+            let quarter = this.state.quarters[j];
+
+            if (course["available"][quarter]) {
+
+              // Check for errors with lecture time inputs
+              for (let k = 0; k < course["lecTimes"][quarter].length; k++) {
+                let lecTime = course["lecTimes"][quarter][k];
+                
+                // Check for undefined lecture times
+                if (this.arrEq(lecTime["dow"], [0, 0, 0, 0, 0]) ||
+                    this.arrEq(lecTime["end"], [-1, -1, 0]) ||
+                    this.arrEq(lecTime["start"], [-1, -1, 0])) {
+                  errorCourses.push([course.title, quarter, "lecture"]);
+                  break;
+                } // Check that start & end times make sense
+                else if (timeToNum(lecTime["start"]) >= (timeToNum(lecTime["end"]))) {
+                  errorCourses.push([course.title, quarter, "lecture"]);
+                  break;
+                }
+              }
+              
+              // Same for discussion time inputs
+              if (course["disc"][quarter]) {
+                for (let k = 0; k < course["discTimes"][quarter].length; k++) {
+                  let discTime = course["discTimes"][quarter][k];
+                  
+                  if (this.arrEq(discTime["dow"], [0, 0, 0, 0, 0]) ||
+                      this.arrEq(discTime["end"], [-1, -1, 0]) ||
+                      this.arrEq(discTime["start"], [-1, -1, 0])) {
+                    errorCourses.push([course.title, quarter, "discussion"]);
+                    break;
+                  } else if (timeToNum(discTime["start"]) >= (timeToNum(discTime["end"]))) {
+                    errorCourses.push([course.title, quarter, "discussion"]);
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // 'Compile' all course input error (lecture + discussions) & render alert message
+        let errorCoursesStr = "";
+        for (let i = 0; i < errorCourses.length; i++) {
+          let error = errorCourses[i];
+          if (i !== 0) {
+            errorCoursesStr += " ";
+          }
+
+          errorCoursesStr += `${error[0]} (${capitalize(error[1])} - ${capitalize(error[2])})`;
+
+          if (i + 1 !== errorCourses.length) {
+            errorCoursesStr += " |";
+          }
+        }
+        
+        if (errorCourses.length > 0) {
+          let errorMsg = "It looks like you had some errors in entering courses.";
+          errorMsg += " Remember to (1) make sure you filled out the correct lecture times,";
+          errorMsg += " discussions times, and days of the week and (2) all end times";
+          errorMsg += " for lectures & discussions come after start times. Here are the errors";
+          errorMsg += ` we found: ${errorCoursesStr}.`;
+          alert(errorMsg);
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    // Helper function to check for array equality
+    arrEq = (arr1, arr2) => {
+      if (arr1.length !== arr2.length) {
+        return false;
+      } else {
+        for (let i = 0; i < arr1.length; i++) {
+          if (arr1[i] !== arr2[i]) {
+            return false;
+          }
+        }
+
+        return true;
+      }
+    }
+
+    
     ///////////////////
     // Render method //
     ///////////////////
+
   
     render() { 
       return ( 
@@ -809,11 +928,15 @@ class Input extends Component {
           <button onClick={this.addCourse} className="btn btn-primary m-right-sm">Add Course</button>
           <button onClick={this.addSeries} className="btn btn-primary m-right-sm">Add Year-Long Series</button>
           <button onClick={this.clear} className="btn btn-danger m-right-sm">Clear Data</button>
-          <button onClick={() => this.props.onTransition("preCoReq",
-                                                        this.state.currentId, 
-                                                        this.state.courses, 
-                                                        this.state.maxFour, 
-                                                        this.state.balance)} 
+          <button onClick={() => {
+            if (!this.catchInputErrors()) {
+              this.props.onTransition("preCoReq",
+                                      this.state.currentId, 
+                                      this.state.courses, 
+                                      this.state.maxFour, 
+                                      this.state.balance)
+            }
+          }}
                             className="btn btn-success">Enter Pre/Co-Requisites</button>
           <div className="form-check m-top-sm">
             <input 
