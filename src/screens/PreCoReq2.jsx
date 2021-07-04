@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import { courses_lg, courses_sm } from '../utils/SampleData';
 import 'bootstrap/dist/css/bootstrap.css';
 import '../App.css';
 
@@ -11,34 +10,6 @@ class PreCoReq2 extends Component {
         super(props);
         this.state = {courses: props.courses, titleMap: props.titleMap};
     };
-
-    ////////////////////////////
-    // Testing w/ Sample Data //
-    ////////////////////////////
-
-    sampleDataSm = () => {
-        this.setState({
-            currentId: 6,
-            courses: courses_sm,
-            tenMinGap: true,
-            maxFour: true,
-            balance: true
-        });
-    };
-
-    sampleDataLg = () => {
-        this.setState({
-            currentId: 13,
-            courses: courses_lg,
-            tenMinGap: true,
-            maxFour: true,
-            balance: true
-        });
-    };
-
-    ///////////////////////////
-    // End Testing Functions //
-    ///////////////////////////
 
     // Find course index in internal list, based on its Id number
     findIndex = (courseId) => {
@@ -177,10 +148,6 @@ class PreCoReq2 extends Component {
                 </div>
                 ))}
 
-                <br />
-                <button onClick={this.sampleDataLg} className="btn btn-primary m-right-sm">Populate Sample Data (Large)</button>
-                <button onClick={this.sampleDataSm} className="btn btn-primary m-right-sm">Populate Sample Data (Small)</button>
-                <br />
                 <button onClick={() => this.props.onTransition("input", this.state.courses)} 
                         className="btn btn-warning m-top m-bottom-sm">Return to Course Inputs</button>
                 <br />
