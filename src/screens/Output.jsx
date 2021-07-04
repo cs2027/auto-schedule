@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import 'bootstrap/dist/css/bootstrap.css';
 import '../App.css';
-import { capitalize, orderCourses, ltTime, tenMinGap } from '../Globals';
+import { capitalize, orderCourses, ltTime, tenMinGap, timeToNum } from '../Globals';
 
 // Displays suggested course schedule(s)
 class Output extends Component {
@@ -41,13 +41,15 @@ class Output extends Component {
             coreqs: arr(numCourses),  
             seqs: [] // Year-long sequences
         };
+
+        console.log(props.courses)
     };
 
     // Forcefully update the `schedulesFinal` state variable + re-render screen
     componentDidMount() {
         let result = this.buildSchedules();
-        this.setState({ totalSchedules: result["totalSchedules"]});
-        this.setState({ schedulesFinal: result["schedulesFinal"]});
+        this.setState({ totalSchedules: result["totalSchedules"] });
+        this.setState({ schedulesFinal: result["schedulesFinal"] });
         this.forceUpdate();
     }
 
@@ -166,7 +168,7 @@ class Output extends Component {
             For each permutation, do the following:
             (1) Determine the number of lecture & discussion sections for each course
             (2) Compute all possible combinations of these^^ sections & filter based on 
-            if there are any time overlaps or not
+            if there are any time overlaps or not AND if we need to sync lecture/discussion times
             (3) Add valid schedules to the unparsed list, along with their score (see above)
         */
         let schedulesUnparsed = [];
@@ -312,6 +314,26 @@ class Output extends Component {
                 }
             }
         };
+
+        for (let i = 0; i < schedule.length; i++) {
+            let courseSchedule = schedule[i];
+            let quarter = courseSchedule.quarter;
+            let courseData = this.state.courses[i];
+
+            if (!courseData.syncDisc || !courseData["disc"][quarter] || courseSchedule.discIndex === null) {
+                continue;
+            }
+
+            let lecIndex = courseSchedule.lecIndex;
+            let discIndex = courseSchedule.discIndex;
+            let lecTime = courseData["lecTimes"][quarter][lecIndex];
+            let discTime = courseData["discTimes"][quarter][discIndex];
+
+            if ((timeToNum(lecTime.start) !== timeToNum(discTime.start)) || 
+                (timeToNum(lecTime.end) !== timeToNum(discTime.end))) {
+                    return false;
+            }
+        }
 
         return true;
     };

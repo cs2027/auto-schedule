@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { courses_sm, courses_lg } from '../utils/SampleData';
+import { courses_lg, courses_sm } from '../utils/SampleData';
 import 'bootstrap/dist/css/bootstrap.css';
 import '../App.css';
 

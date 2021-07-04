@@ -67,6 +67,7 @@ class Input extends Component {
                       winter: true,
                       spring: true
                     },
+                    syncDisc: false,
                     series: false,
                     seriesIndex: 0, 
                     unique: false,
@@ -120,6 +121,7 @@ class Input extends Component {
                         winter: false,
                         spring: false
                       },
+                      syncDisc: false,
                       series: true,
                       seriesIndex: 0,
                       unique: true,
@@ -155,6 +157,7 @@ class Input extends Component {
                         winter: true,
                         spring: false
                       },
+                      syncDisc: false,
                       series: true,
                       seriesIndex: 1,
                       unique: true,
@@ -190,6 +193,7 @@ class Input extends Component {
                         winter: false,
                         spring: true
                       },
+                      syncDisc: false,
                       series: true,
                       seriesIndex: 2,
                       unique: true,
@@ -444,6 +448,17 @@ class Input extends Component {
       this.setState({ courses });
     };
 
+    // Sync lecture & discussions times
+    changeSyncDisc = ({target}) => {
+      let courseId = parseInt(target.dataset.courseid);
+      let checked = target.checked;
+      let index = this.findIndex(courseId);
+      let courses = [...this.state.courses];
+    
+      courses[index].syncDisc = checked;
+      this.setState({ courses });
+    }
+
 
     ////////////////////////////////////////
     /// Error catching for course inputs ///
@@ -458,6 +473,7 @@ class Input extends Component {
           (1) User has entered at least one course
           (2) + (3) User has not entered too many courses
           (4) User has entered valid data for discussion & lecture times
+          (5) Possible to sync discussion & lecture times where desired
       */
       if (this.state.courses.length === 0) {  // (1)
         alert("You cannot continue until you enter at least one course.");
@@ -470,46 +486,95 @@ class Input extends Component {
         errorMsg += ", but we're not going to let you enter over 15 courses.";
         alert(errorMsg);
         return true;
-      } else {  // (4)
-        let errorCourses = [];
+      } 
+      
+      // (4)
+      let errorCourses = [];
 
-        for (let i = 0; i < this.state.courses.length; i++) {
-          let course = this.state.courses[i];
+      for (let i = 0; i < this.state.courses.length; i++) {
+        let course = this.state.courses[i];
 
-          for (let j = 0; j < this.state.quarters.length; j++) {
-            let quarter = this.state.quarters[j];
+        for (let j = 0; j < this.state.quarters.length; j++) {
+          let quarter = this.state.quarters[j];
 
-            if (course["available"][quarter]) {
+          if (course["available"][quarter]) {
 
-              // Check for errors with lecture time inputs
-              for (let k = 0; k < course["lecTimes"][quarter].length; k++) {
-                let lecTime = course["lecTimes"][quarter][k];
+            // Check for errors with lecture time inputs
+            for (let k = 0; k < course["lecTimes"][quarter].length; k++) {
+              let lecTime = course["lecTimes"][quarter][k];
+              
+              // Check for undefined lecture times
+              if (this.arrEq(lecTime["dow"], [0, 0, 0, 0, 0]) ||
+                  this.arrEq(lecTime["end"], [-1, -1, 0]) ||
+                  this.arrEq(lecTime["start"], [-1, -1, 0])) {
+                errorCourses.push([course.title, quarter, "lecture"]);
+                break;
+              } // Check that start & end times make sense
+              else if (timeToNum(lecTime["start"]) >= (timeToNum(lecTime["end"]))) {
+                errorCourses.push([course.title, quarter, "lecture"]);
+                break;
+              }
+            }
+            
+            // Same for discussion time inputs
+            if (course["disc"][quarter]) {
+              for (let k = 0; k < course["discTimes"][quarter].length; k++) {
+                let discTime = course["discTimes"][quarter][k];
                 
-                // Check for undefined lecture times
-                if (this.arrEq(lecTime["dow"], [0, 0, 0, 0, 0]) ||
-                    this.arrEq(lecTime["end"], [-1, -1, 0]) ||
-                    this.arrEq(lecTime["start"], [-1, -1, 0])) {
-                  errorCourses.push([course.title, quarter, "lecture"]);
+                if (this.arrEq(discTime["dow"], [0, 0, 0, 0, 0]) ||
+                    this.arrEq(discTime["end"], [-1, -1, 0]) ||
+                    this.arrEq(discTime["start"], [-1, -1, 0])) {
+                  errorCourses.push([course.title, quarter, "discussion"]);
                   break;
-                } // Check that start & end times make sense
-                else if (timeToNum(lecTime["start"]) >= (timeToNum(lecTime["end"]))) {
-                  errorCourses.push([course.title, quarter, "lecture"]);
+                } else if (timeToNum(discTime["start"]) >= (timeToNum(discTime["end"]))) {
+                  errorCourses.push([course.title, quarter, "discussion"]);
                   break;
                 }
               }
-              
-              // Same for discussion time inputs
-              if (course["disc"][quarter]) {
-                for (let k = 0; k < course["discTimes"][quarter].length; k++) {
-                  let discTime = course["discTimes"][quarter][k];
-                  
-                  if (this.arrEq(discTime["dow"], [0, 0, 0, 0, 0]) ||
-                      this.arrEq(discTime["end"], [-1, -1, 0]) ||
-                      this.arrEq(discTime["start"], [-1, -1, 0])) {
-                    errorCourses.push([course.title, quarter, "discussion"]);
-                    break;
-                  } else if (timeToNum(discTime["start"]) >= (timeToNum(discTime["end"]))) {
-                    errorCourses.push([course.title, quarter, "discussion"]);
+            }
+          }
+        }
+      }
+
+      // (5)
+      for (let i = 0; i < this.state.courses.length; i++) {
+        let course = this.state.courses[i];
+
+        if (!course.syncDisc || (!course.disc["fall"] && !course.disc["winter"] && !course.disc["spring"])) {
+          continue;
+        }
+
+        let validDisc = { "fall": false, "winter": false, "spring": false };
+        if (!course.disc["fall"]) {
+          validDisc["fall"] = true
+        } 
+
+        if (!course.disc["winter"]) {
+          validDisc["winter"] = true
+        }
+
+        if (!course.disc["spring"]) {
+          validDisc["spring"] = true
+        }
+
+        for (let j = 0; j < this.state.quarters.length; j++) {
+          let quarter = this.state.quarters[j];
+
+          if (course.disc[quarter]) {
+            for (let k = 0; k < course["lecTimes"][quarter].length; k++) {
+
+              if (!validDisc[quarter]) {
+                for (let l = 0; l < course["discTimes"][quarter].length; l++) {
+                  let lecTime = course["lecTimes"][quarter][k];
+                  let discTime = course["discTimes"][quarter][l];
+
+                  const lecStart = lecTime.start;
+                  const lecEnd = lecTime.end;
+                  const discStart = discTime.start;
+                  const discEnd = discTime.end;
+
+                  if (timeToNum(lecStart) === timeToNum(discStart) && timeToNum(lecEnd) === timeToNum(discEnd)) {
+                    validDisc[quarter] = true;
                     break;
                   }
                 }
@@ -517,31 +582,38 @@ class Input extends Component {
             }
           }
         }
-
-        // 'Compile' all course input error (lecture + discussions) & render alert message
-        let errorCoursesStr = "";
-        for (let i = 0; i < errorCourses.length; i++) {
-          let error = errorCourses[i];
-          if (i !== 0) {
-            errorCoursesStr += " ";
-          }
-
-          errorCoursesStr += `${error[0]} (${capitalize(error[1])} - ${capitalize(error[2])})`;
-
-          if (i + 1 !== errorCourses.length) {
-            errorCoursesStr += " |";
-          }
-        }
         
-        if (errorCourses.length > 0) {
-          let errorMsg = "It looks like you had some errors in entering courses.";
-          errorMsg += " Remember to (1) make sure you filled out the correct lecture times,";
-          errorMsg += " discussions times, and days of the week and (2) all end times";
-          errorMsg += " for lectures & discussions come after start times. Here are the errors";
-          errorMsg += ` we found: ${errorCoursesStr}.`;
-          alert(errorMsg);
-          return true;
+        for (let i = 0; i < this.state.quarters.length; i++) {
+          let quarter = this.state.quarters[i];
+          if (!validDisc[quarter]) {
+            errorCourses.push([course.title, quarter, "lecture/disc times annot sync up"]);
+          }
         }
+      }
+
+      // 'Compile' all course input error (lecture + discussions) & render alert message
+      let errorCoursesStr = "";
+      for (let i = 0; i < errorCourses.length; i++) {
+        let error = errorCourses[i];
+        if (i !== 0) {
+          errorCoursesStr += " ";
+        }
+
+        errorCoursesStr += `${error[0]} (${capitalize(error[1])} - ${capitalize(error[2])})`;
+
+        if (i + 1 !== errorCourses.length) {
+          errorCoursesStr += " |";
+        }
+      }
+        
+      if (errorCourses.length > 0) {
+        let errorMsg = "It looks like you had some errors in entering courses.";
+        errorMsg += " Remember to (1) make sure you filled out the correct lecture times,";
+        errorMsg += " discussions times, and days of the week and (2) all end times";
+        errorMsg += " for lectures & discussions come after start times. Here are the errors";
+        errorMsg += ` we found: ${errorCoursesStr}.`;
+        alert(errorMsg);
+        return true;
       }
 
       return false;
@@ -611,6 +683,16 @@ class Input extends Component {
                         ))}
                       </select>
                     </div>
+                  </div>
+                  <div className="form-check m-top-sm" hidden={!course.disc["fall"] && !course.disc["winter"] && !course.disc["spring"]}>
+                    <input
+                      onChange={this.changeSyncDisc}
+                      data-courseid={course.id} 
+                      checked={course.syncDisc} 
+                      className="form-check-input" 
+                      type="checkbox" 
+                    />
+                    <label className="form-check-label">Sync up Lecture and Discussion Times</label>
                   </div>
                   <button onClick={() => this.removeCourse(course.id)} className="btn btn-danger btn-sm m-top">Remove Course</button>
                 </div>
