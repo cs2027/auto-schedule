@@ -162,7 +162,6 @@ class PreCoReq2 extends Component {
                     }} 
                     className="btn btn-success">View Course Schedule(s)
                 </button>
-
             </React.Fragment>
         );
     }

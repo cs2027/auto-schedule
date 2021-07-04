@@ -1,4 +1,3 @@
-// import logo from './logo.svg';
 import React, { Component } from 'react';
 import Input from './screens/Input';
 import PreCoReq from './screens/PreCoReq';
@@ -9,7 +8,7 @@ import './App.css';
 
 class App extends Component {
   state = {
-    screen: "preCoReq2",
+    screen: "input",
     currentId: 1,
     courses: [],
     tenMinGap: true,
